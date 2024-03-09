@@ -1,0 +1,9 @@
+{
+  "name": "all-hedge",
+  "version": "1.0.0",
+  "description": "Hedging strategy",
+  "main": "index.js",
+  "scripts": {},
+  "author": "Anurag Roy <anuragroy@duck.com>",
+  "license": "MIT"
+}
