@@ -39,6 +39,7 @@
     "nodemon": "^3.0.1",
     "postcss": "^8.4.35",
     "prettier": "^3.2.5",
+    "prettier-plugin-organize-imports": "^3.2.4",
     "prettier-plugin-tailwindcss": "^0.5.12",
     "tailwindcss": "^3.4.1",
     "vite": "^5.0.2"
@@ -52,7 +53,8 @@
     "semi": true,
     "jsxSingleQuote": true,
     "plugins": [
-      "prettier-plugin-tailwindcss"
+      "prettier-plugin-tailwindcss",
+      "prettier-plugin-organize-imports"
     ]
   }
 }

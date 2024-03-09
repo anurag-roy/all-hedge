@@ -11,9 +11,7 @@ app.get('/api', (_req, res) => {
 });
 
 const PORT = 3000;
-const server = app.listen(PORT, () =>
-  console.log(`Server started on http://localhost:${PORT}`)
-);
+const server = app.listen(PORT, () => console.log(`Server started on http://localhost:${PORT}`));
 
 const wss = new WebSocketServer({ server, path: '/ws' });
 wss.on('connection', (ws) => {
