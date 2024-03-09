@@ -1,1 +1,1 @@
-A hedging strategy for F&O stocks.
+A hedging strategy for F&O stocks using Shoonya APIs.
