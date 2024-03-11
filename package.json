@@ -10,7 +10,8 @@
     "dev": "nodemon -w src/server -x tsx src/server/main.ts",
     "start": "NODE_ENV=production tsx src/server/main.ts",
     "build": "vite build",
-    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\""
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
+    "data:prepare": "rimraf .data/data.db && tsx src/server/scripts/setupDb.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.10.2",

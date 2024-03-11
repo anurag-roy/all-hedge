@@ -1,4 +1,4 @@
-import env from '@shared/env/env.json';
+import env from '@shared/config/env.json';
 import type { ShoonyaError, UserDetails } from '@shared/types/shoonya.js';
 import ky from 'ky';
 

@@ -1,4 +1,4 @@
-import env from '@shared/env/env.json';
+import env from '@shared/config/env.json';
 import ky from 'ky';
 
 export const placeOrder = async (

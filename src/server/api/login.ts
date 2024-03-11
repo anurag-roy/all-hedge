@@ -1,4 +1,4 @@
-import env from '@shared/env/env.json';
+import env from '@shared/config/env.json';
 import { getUserDetails } from '@shared/lib/getUserDetails.js';
 import { getHash } from '@shared/lib/utils.js';
 import { Request, Response } from 'express';
