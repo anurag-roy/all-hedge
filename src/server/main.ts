@@ -1,14 +1,11 @@
+import loginHandler from '@server/api/login.js';
 import express from 'express';
 import ViteExpress from 'vite-express';
 import { WebSocketServer } from 'ws';
 
 const app = express();
 
-app.get('/api', (_req, res) => {
-  res.json({
-    message: 'Hello from server!',
-  });
-});
+app.post('/login', loginHandler);
 
 const PORT = 3000;
 const server = app.listen(PORT, () => console.log(`Server started on http://localhost:${PORT}`));
