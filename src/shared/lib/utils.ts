@@ -1,5 +1,4 @@
 import { clsx, type ClassValue } from 'clsx';
-import { createHash } from 'node:crypto';
 import { twMerge } from 'tailwind-merge';
 
 export const getKeys = <T extends Object>(object: T) => Object.keys(object) as Array<keyof T>;
@@ -43,5 +42,3 @@ export const displayInr = (amount: number) =>
 export const getRandomIndex = (min: number, max: number) => Math.floor(Math.random() * (max - min)) + min;
 
 export const getTodayAsParam = () => new Date().toISOString().slice(0, 10).split('-').reverse().join('');
-
-export const getHash = (input: string) => createHash('sha256').update(input).digest('hex');

@@ -1,6 +1,6 @@
 import env from '@shared/config/env.json';
+import { getHash } from '@shared/lib/getHash.js';
 import { getUserDetails } from '@shared/lib/getUserDetails.js';
-import { getHash } from '@shared/lib/utils.js';
 import { Request, Response } from 'express';
 import { readFileSync, writeFileSync } from 'fs';
 import ky from 'ky';
