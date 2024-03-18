@@ -1,4 +1,4 @@
-import { STOCKS_TO_INCLUDE } from '@shared/config/config.js';
+import config from '@shared/config/config.js';
 import { getInstruments } from '@shared/lib/getInstruments.js';
 import { getKeys } from '@shared/lib/utils.js';
 import Database from 'better-sqlite3';
@@ -12,7 +12,7 @@ async function main() {
   const nseInstruments = await getInstruments('NSE');
   const nfoInstruments = await getInstruments('NFO');
 
-  const instruments = [...nseInstruments, ...nfoInstruments].filter((i) => STOCKS_TO_INCLUDE.includes(i.symbol));
+  const instruments = [...nseInstruments, ...nfoInstruments].filter((i) => config.STOCKS_TO_INCLUDE.includes(i.symbol));
 
   const columns = getKeys(instruments[0]);
 

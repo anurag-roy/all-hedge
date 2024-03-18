@@ -43,20 +43,18 @@ export const getInstruments = async (forExchange: 'NSE' | 'NFO') => {
       const [exchange, token, lotSize, symbol, tradingSymbol, expiry, instrument, optionType, strikePrice, tickSize] =
         row.split(',');
 
-      if (optionType === 'CE' || optionType === 'PE') {
-        output.push({
-          exchange,
-          token,
-          lotSize: Number(lotSize),
-          symbol,
-          tradingSymbol,
-          expiry,
-          instrument,
-          optionType,
-          strikePrice: Number(strikePrice),
-          tickSize,
-        });
-      }
+      output.push({
+        exchange,
+        token,
+        lotSize: Number(lotSize),
+        symbol,
+        tradingSymbol,
+        expiry,
+        instrument,
+        optionType,
+        strikePrice: Number(strikePrice),
+        tickSize,
+      });
     }
   }
 

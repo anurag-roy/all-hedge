@@ -50,7 +50,7 @@ export default async function (req: Request, res: Response) {
       throw new Error(loginResponse.emsg);
     }
 
-    writeFileSync('.data/token.txt', loginResponse.susertoken, 'utf-8');
+    writeFileSync('src/data/token.txt', loginResponse.susertoken, 'utf-8');
     injectTokenIntoEnv(loginResponse.susertoken);
 
     res.json({ message: 'Login successful!' });

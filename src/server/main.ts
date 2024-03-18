@@ -2,7 +2,7 @@ import loginHandler from '@server/api/login.js';
 import express from 'express';
 import ViteExpress from 'vite-express';
 import { WebSocketServer } from 'ws';
-import { ticker } from './globals/ticker.js';
+import { setupState } from './state.js';
 
 const app = express();
 
@@ -21,9 +21,4 @@ wss.on('connection', (ws) => {
 
 ViteExpress.bind(app, server);
 
-ticker.send(
-  JSON.stringify({
-    t: 't',
-    k: 'NFO|195108',
-  })
-);
+await setupState();
