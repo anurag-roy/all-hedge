@@ -2,40 +2,79 @@ import config from '@shared/config/config.js';
 import { placeOrder } from '@shared/lib/placeOrder.js';
 import { TouchlineResponse } from '@shared/types/shoonya.js';
 import { orderBy } from 'lodash-es';
+import { readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { MessageEvent } from 'ws';
 import { getEquities, getFutures, getInstrumentsForSymbol } from './db/db.js';
 import { ticker } from './globals/ticker.js';
+
+type OptionState = {
+  token: string;
+  tradingSymbol: string;
+  bp: number;
+  sp: number;
+};
 
 type StockState = {
   symbol: string;
   equity: {
     token: string;
     ltp: number;
+    upperBound: number;
+    lowerBound: number;
   };
-  future: {
-    token: string;
-    tradingSymbol: string;
-    bp: number;
-    sp: number;
-  };
+  future: OptionState;
   lotSize: number;
   strike: number;
-  pe: {
-    token: string;
-    tradingSymbol: string;
-    bp: number;
-    sp: number;
-  };
-  ce: {
-    token: string;
-    tradingSymbol: string;
-    bp: number;
-    sp: number;
-  };
+  pe: OptionState;
+  ce: OptionState;
 };
-export const stockState: Record<string, StockState> = {};
 
-async function checkEntryCondition({ symbol, equity, future, ce, pe, strike, lotSize }: StockState) {
+type EnteredOptionState = {
+  token: string;
+  tradingSymbol: string;
+  transactionType: string;
+  price: number;
+  quantity: number;
+};
+
+type EnteredState = {
+  condition: 1 | 2;
+  entryValueDifference: number;
+  time: string;
+  symbol: string;
+  equity: {
+    token: string;
+    ltp: number;
+  };
+  future: EnteredOptionState;
+  strike: number;
+  pe: EnteredOptionState;
+  ce: EnteredOptionState;
+};
+
+const stockState: Record<string, StockState> = {};
+const enteredStockState = getExistingEntries();
+const enteredTokens = new Set(
+  Object.values(enteredStockState).flatMap((entry) => [
+    entry.equity.token,
+    entry.future.token,
+    entry.pe.token,
+    entry.ce.token,
+  ])
+);
+
+function getExistingEntries() {
+  const files = readdirSync('.data/entries');
+  const entries: Record<string, EnteredState> = {};
+  for (const file of files) {
+    const entry = JSON.parse(readFileSync(`.data/entries/${file}`, 'utf-8'));
+    entries[entry.symbol] = entry;
+  }
+  return entries;
+}
+
+async function checkEntryCondition(state: StockState) {
+  const { symbol, equity, future, ce, pe, strike, lotSize } = state;
   if (!equity.ltp || !future.bp || !future.sp || !pe.bp || !pe.sp || !ce.bp || !ce.sp) {
     return;
   }
@@ -51,11 +90,45 @@ async function checkEntryCondition({ symbol, equity, future, ce, pe, strike, lot
       placeOrder('B', pe.sp, lotSize, pe.tradingSymbol),
       placeOrder('S', ce.bp, lotSize, ce.tradingSymbol),
     ]);
+    // TODO: get this from order response
+    const orderState: EnteredState = {
+      condition: 1,
+      entryValueDifference: config.ENTRY_VALUE_DIFFERENCE,
+      time: new Date().toISOString(),
+      symbol: symbol,
+      equity: {
+        token: equity.token,
+        ltp: equity.ltp,
+      },
+      future: {
+        token: future.token,
+        tradingSymbol: future.tradingSymbol,
+        transactionType: 'B',
+        price: future.sp,
+        quantity: lotSize,
+      },
+      strike: strike,
+      pe: {
+        token: pe.token,
+        tradingSymbol: pe.tradingSymbol,
+        transactionType: 'B',
+        price: pe.sp,
+        quantity: lotSize,
+      },
+      ce: {
+        token: ce.token,
+        tradingSymbol: ce.tradingSymbol,
+        transactionType: 'S',
+        price: ce.bp,
+        quantity: lotSize,
+      },
+    };
+    writeFileSync(`.data/entries/${symbol}.json`, JSON.stringify(orderState, null, 4), 'utf-8');
     console.log('Exiting...');
     process.exit(0);
   }
 
-  // Conidtion 2 calculation
+  // Condition 2 calculation
   const result2 =
     (future.bp - equity.ltp + pe.bp - Math.max(strike - equity.ltp, 0) + Math.max(equity.ltp - strike, 0) - ce.sp) *
     lotSize;
@@ -66,6 +139,40 @@ async function checkEntryCondition({ symbol, equity, future, ce, pe, strike, lot
       placeOrder('S', pe.bp, lotSize, pe.tradingSymbol),
       placeOrder('B', ce.sp, lotSize, ce.tradingSymbol),
     ]);
+    // TODO: Get this from order response
+    const orderState: EnteredState = {
+      condition: 2,
+      entryValueDifference: config.ENTRY_VALUE_DIFFERENCE,
+      time: new Date().toISOString(),
+      symbol: symbol,
+      equity: {
+        token: equity.token,
+        ltp: equity.ltp,
+      },
+      future: {
+        token: future.token,
+        tradingSymbol: future.tradingSymbol,
+        transactionType: 'S',
+        price: future.bp,
+        quantity: lotSize,
+      },
+      strike: strike,
+      pe: {
+        token: pe.token,
+        tradingSymbol: pe.tradingSymbol,
+        transactionType: 'S',
+        price: pe.bp,
+        quantity: lotSize,
+      },
+      ce: {
+        token: ce.token,
+        tradingSymbol: ce.tradingSymbol,
+        transactionType: 'B',
+        price: ce.sp,
+        quantity: lotSize,
+      },
+    };
+    writeFileSync(`.data/entries/${symbol}.json`, JSON.stringify(orderState, null, 4), 'utf-8');
     console.log('Exiting...');
     process.exit(0);
   }
@@ -87,6 +194,7 @@ async function checkExitCondition({ symbol, equity, future, ce, pe, strike, lotS
         placeOrder('S', pe.bp, lotSize, pe.tradingSymbol),
         placeOrder('B', ce.sp, lotSize, ce.tradingSymbol),
       ]);
+      rmSync(`.data/entries/${symbol}.json`);
       console.log('Exiting...');
       process.exit(0);
     }
@@ -101,6 +209,7 @@ async function checkExitCondition({ symbol, equity, future, ce, pe, strike, lotS
         placeOrder('B', pe.sp, lotSize, pe.tradingSymbol),
         placeOrder('S', ce.bp, lotSize, ce.tradingSymbol),
       ]);
+      rmSync(`.data/entries/${symbol}.json`);
       console.log('Exiting...');
       process.exit(0);
     }
@@ -110,36 +219,45 @@ async function checkExitCondition({ symbol, equity, future, ce, pe, strike, lotS
 export async function setupState() {
   // Get equities
   const equities = await getEquities();
+
   equities.forEach((equity) => {
+    const entry = enteredStockState[equity.symbol];
     const state: StockState = {
       symbol: equity.symbol,
       equity: {
         token: equity.token,
         ltp: 0,
+        upperBound: 0,
+        lowerBound: 0,
       },
       future: {
-        token: '',
-        tradingSymbol: '',
+        token: entry?.future.token || '',
+        tradingSymbol: entry?.future.tradingSymbol || '',
         bp: 0,
         sp: 0,
       },
       lotSize: 0,
-      strike: 0,
+      strike: entry?.strike || 0,
       pe: {
-        token: '',
-        tradingSymbol: '',
+        token: entry?.pe.token || '',
+        tradingSymbol: entry?.pe.tradingSymbol || '',
         bp: 0,
         sp: 0,
       },
       ce: {
-        token: '',
-        tradingSymbol: '',
+        token: entry?.ce.token || '',
+        tradingSymbol: entry?.ce.tradingSymbol || '',
         bp: 0,
         sp: 0,
       },
     };
     stockState[equity.token] = state;
     stockState[equity.symbol] = state;
+    if (entry) {
+      stockState[entry.future.token] = state;
+      stockState[entry.pe.token] = state;
+      stockState[entry.ce.token] = state;
+    }
   });
 
   const passedEquitySymbols: string[] = [];
@@ -157,8 +275,8 @@ export async function setupState() {
         const ltp = Number(messageData.lp);
 
         // Checkif LTP is below threshold
-        if (ltp < config.LTP_THRESHOLD) {
-          tokensToUnsubscribe.push(messageData.tk);
+        if (!enteredTokens.has(messageData.tk) && ltp < config.LTP_THRESHOLD) {
+          tokensToUnsubscribe.push(`NSE|${messageData.tk}`);
 
           // Remove from state
           const state = stockState[messageData.tk];
@@ -167,7 +285,11 @@ export async function setupState() {
           delete stockState[messageData.tk];
         } else {
           stockState[messageData.tk].equity.ltp = ltp;
-          passedEquitySymbols.push(stockState[messageData.tk].symbol);
+          if (!enteredTokens.has(messageData.tk)) {
+            stockState[messageData.tk].equity.upperBound = ltp * (1 + config.LTP_MAX_CHANGE);
+            stockState[messageData.tk].equity.lowerBound = ltp * (1 - config.LTP_MAX_CHANGE);
+            passedEquitySymbols.push(stockState[messageData.tk].symbol);
+          }
         }
 
         // Resolve once all responses are received
@@ -199,6 +321,11 @@ export async function setupState() {
   });
 
   const nfoTokens: string[] = [];
+  for (const entry of Object.values(enteredStockState)) {
+    nfoTokens.push(`NFO|${entry.future.token}`);
+    nfoTokens.push(`NFO|${entry.pe.token}`);
+    nfoTokens.push(`NFO|${entry.ce.token}`);
+  }
 
   // Get futures
   const futures = await getFutures(config.EXPIRY, passedEquitySymbols);
@@ -216,9 +343,25 @@ export async function setupState() {
     const state = stockState[symbol];
     const options = await getInstrumentsForSymbol(config.EXPIRY, symbol);
     const nearestOptions = orderBy(options, (o) => Math.abs(state.equity.ltp - o.strikePrice)).slice(0, 2);
+    const strike = nearestOptions[0].strikePrice;
+
+    // Check if strike price is within LTP bounds
+    if (strike >= state.equity.upperBound || strike <= state.equity.lowerBound) {
+      console.log('Strike price not within LTP bounds for', symbol);
+
+      // Delete state
+      delete stockState[state.symbol];
+      delete stockState[state.equity.token];
+      delete stockState[state.future.token];
+      ticker.send(JSON.stringify({ t: 'u', k: `NSE|${state.equity.token}` }));
+      const foundIndex = nfoTokens.indexOf(`NFO|${state.future.token}`);
+      if (foundIndex !== -1) {
+        nfoTokens.splice(foundIndex, 1);
+      }
+      continue;
+    }
 
     for (const option of nearestOptions) {
-      const state = stockState[option.symbol];
       state.strike = option.strikePrice;
       stockState[option.token] = state;
       const key = option.optionType.toLowerCase() as 'pe' | 'ce';
@@ -233,9 +376,26 @@ export async function setupState() {
     const messageData = JSON.parse(messageEvent.data as string) as TouchlineResponse;
     const state = stockState[messageData.tk];
 
+    if (!state) {
+      return;
+    }
+
     let updated = false;
     if (messageData.tk === state.equity.token) {
       if (messageData.lp) {
+        const newLtp = Number(messageData.lp);
+        if (
+          (!enteredTokens.has(messageData.tk) && newLtp > state.equity.upperBound) ||
+          newLtp < state.equity.lowerBound
+        ) {
+          console.log('LTP change exceeded for', state.symbol);
+          // Delete state
+          delete stockState[state.symbol];
+          delete stockState[state.equity.token];
+          delete stockState[state.future.token];
+          ticker.send(JSON.stringify({ t: 'u', k: `NSE|${state.equity.token}` }));
+          return;
+        }
         state.equity.ltp = Number(messageData.lp);
         updated = true;
       }
@@ -269,9 +429,18 @@ export async function setupState() {
     }
 
     if (updated) {
-      await checkEntryCondition(state);
+      if (enteredTokens.has(messageData.tk)) {
+        const entry = enteredStockState[state.symbol];
+        if (entry) {
+          await checkExitCondition(state, entry.condition);
+        }
+      } else {
+        await checkEntryCondition(state);
+      }
     }
   };
+
+  writeFileSync('.data/state.json', JSON.stringify(stockState, null, 4), 'utf-8');
 
   // Subscribe to all future and option tokens
   ticker.send(

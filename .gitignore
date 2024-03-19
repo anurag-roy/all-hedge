@@ -31,4 +31,4 @@ dist-ssr
 !example.env.json
 
 # token
-.data/token.txt
+.data/
