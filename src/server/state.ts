@@ -6,6 +6,7 @@ import { readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { MessageEvent } from 'ws';
 import { getEquities, getFutures, getInstrumentsForSymbol } from './db/db.js';
 import { ticker } from './globals/ticker.js';
+import { getBannedStocks } from '@shared/lib/getBannedStocks.js';
 
 type OptionState = {
   token: string;
@@ -47,6 +48,7 @@ type EnteredState = {
     ltp: number;
   };
   future: EnteredOptionState;
+  lotSize: number;
   strike: number;
   pe: EnteredOptionState;
   ce: EnteredOptionState;
@@ -107,6 +109,7 @@ async function checkEntryCondition(state: StockState) {
         price: future.sp,
         quantity: lotSize,
       },
+      lotSize: lotSize,
       strike: strike,
       pe: {
         token: pe.token,
@@ -156,6 +159,7 @@ async function checkEntryCondition(state: StockState) {
         price: future.bp,
         quantity: lotSize,
       },
+      lotSize: lotSize,
       strike: strike,
       pe: {
         token: pe.token,
@@ -178,21 +182,24 @@ async function checkEntryCondition(state: StockState) {
   }
 }
 
-async function checkExitCondition({ symbol, equity, future, ce, pe, strike, lotSize }: StockState, condition: 1 | 2) {
+async function checkExitCondition(
+  { symbol, equity, future, ce, pe, strike, lotSize }: StockState,
+  entry: EnteredState
+) {
   if (!equity.ltp || !future.bp || !future.sp || !pe.bp || !pe.sp || !ce.bp || !ce.sp) {
     return;
   }
 
-  if (condition === 1) {
+  if (entry.condition === 1) {
     const result =
       (equity.ltp - future.bp + Math.max(strike - equity.ltp, 0) - pe.bp + ce.sp - Math.max(equity.ltp - strike, 0)) *
       lotSize;
     if (result <= config.EXIT_VALUE_DIFFERENCE) {
       console.log('Exit condition 1 satisfied for', symbol);
       await Promise.all([
-        placeOrder('S', future.bp, lotSize, future.tradingSymbol),
-        placeOrder('S', pe.bp, lotSize, pe.tradingSymbol),
-        placeOrder('B', ce.sp, lotSize, ce.tradingSymbol),
+        placeOrder('S', future.bp, entry.future.quantity, future.tradingSymbol),
+        placeOrder('S', pe.bp, entry.pe.quantity, pe.tradingSymbol),
+        placeOrder('B', ce.sp, entry.ce.quantity, ce.tradingSymbol),
       ]);
       rmSync(`.data/entries/${symbol}.json`);
       console.log('Exiting...');
@@ -205,9 +212,9 @@ async function checkExitCondition({ symbol, equity, future, ce, pe, strike, lotS
     if (result <= config.EXIT_VALUE_DIFFERENCE) {
       console.log('Exit condition 2 satisfied for', symbol);
       await Promise.all([
-        placeOrder('B', future.sp, lotSize, future.tradingSymbol),
-        placeOrder('B', pe.sp, lotSize, pe.tradingSymbol),
-        placeOrder('S', ce.bp, lotSize, ce.tradingSymbol),
+        placeOrder('B', future.sp, entry.future.quantity, future.tradingSymbol),
+        placeOrder('B', pe.sp, entry.pe.quantity, pe.tradingSymbol),
+        placeOrder('S', ce.bp, entry.ce.quantity, ce.tradingSymbol),
       ]);
       rmSync(`.data/entries/${symbol}.json`);
       console.log('Exiting...');
@@ -217,8 +224,9 @@ async function checkExitCondition({ symbol, equity, future, ce, pe, strike, lotS
 }
 
 export async function setupState() {
+  const bannedStocks = await getBannedStocks();
   // Get equities
-  const equities = await getEquities();
+  const equities = (await getEquities()).filter(e => !bannedStocks.includes(e.symbol));
 
   equities.forEach((equity) => {
     const entry = enteredStockState[equity.symbol];
@@ -236,7 +244,7 @@ export async function setupState() {
         bp: 0,
         sp: 0,
       },
-      lotSize: 0,
+      lotSize: entry?.lotSize || 0,
       strike: entry?.strike || 0,
       pe: {
         token: entry?.pe.token || '',
@@ -432,7 +440,7 @@ export async function setupState() {
       if (enteredTokens.has(messageData.tk)) {
         const entry = enteredStockState[state.symbol];
         if (entry) {
-          await checkExitCondition(state, entry.condition);
+          await checkExitCondition(state, entry);
         }
       } else {
         await checkEntryCondition(state);
