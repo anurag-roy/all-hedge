@@ -18,5 +18,5 @@ export const getQuotes = async (exchange: 'NSE' | 'NFO', instrumentToken: string
   if (quotes.stat !== 'Ok') {
     throw new Error(quotes.emsg);
   }
-  return quotes as Quote;
+  return quotes;
 };

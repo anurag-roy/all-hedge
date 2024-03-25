@@ -1,4 +1,5 @@
 import loginHandler from '@server/api/login.js';
+import config from '@shared/config/config.js';
 import express from 'express';
 import ViteExpress from 'vite-express';
 import { WebSocketServer } from 'ws';
@@ -8,8 +9,7 @@ const app = express();
 
 app.post('/login', loginHandler);
 
-const PORT = 3000;
-const server = app.listen(PORT, () => console.log(`Server started on http://localhost:${PORT}`));
+const server = app.listen(config.PORT, () => console.log(`Server started on http://localhost:${config.PORT}`));
 
 const wss = new WebSocketServer({ server, path: '/ws' });
 wss.on('connection', (ws) => {

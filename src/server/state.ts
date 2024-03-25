@@ -1,12 +1,14 @@
 import config from '@shared/config/config.js';
+import { getBannedStocks } from '@shared/lib/getBannedStocks.js';
+import { getMargin } from '@shared/lib/getMargin.js';
 import { placeOrder } from '@shared/lib/placeOrder.js';
-import { TouchlineResponse } from '@shared/types/shoonya.js';
+import { DepthResponse, TouchlineResponse } from '@shared/types/shoonya.js';
 import { orderBy } from 'lodash-es';
 import { readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { MessageEvent } from 'ws';
 import { getEquities, getFutures, getInstrumentsForSymbol } from './db/db.js';
 import { ticker } from './globals/ticker.js';
-import { getBannedStocks } from '@shared/lib/getBannedStocks.js';
+import { throttle } from './requestEngine.js';
 
 type OptionState = {
   token: string;
@@ -226,7 +228,7 @@ async function checkExitCondition(
 export async function setupState() {
   const bannedStocks = await getBannedStocks();
   // Get equities
-  const equities = (await getEquities()).filter(e => !bannedStocks.includes(e.symbol));
+  const equities = (await getEquities()).filter((e) => !bannedStocks.includes(e.symbol));
 
   equities.forEach((equity) => {
     const entry = enteredStockState[equity.symbol];
@@ -336,7 +338,26 @@ export async function setupState() {
   }
 
   // Get futures
-  const futures = await getFutures(config.EXPIRY, passedEquitySymbols);
+  const allfutures = await getFutures(config.EXPIRY, passedEquitySymbols);
+
+  // Filter out futures according to margin
+  console.log(`Checking margins for ${allfutures.length} futures...`);
+  const getMarginArgs: Array<Parameters<typeof getMargin>> = allfutures.map((f) => [f.tradingSymbol, 0, f.lotSize]);
+  const margins = await throttle(getMargin, getMarginArgs);
+  const futures = allfutures.filter((future, index) => {
+    const marginResponse = margins[index];
+    if (marginResponse.status === 'rejected') {
+      console.error('Error fetching margin for', future.symbol, marginResponse.reason);
+      return false;
+    }
+    if (marginResponse.value.remarks === 'Insufficient Balance') {
+      return false;
+    }
+    const margin = Number(marginResponse.value.ordermargin);
+    return margin <= (0.9 * config.MARGIN) / 2;
+  });
+  console.log(`${allfutures.length - futures.length} futures did not satisfy the margin requirement...`);
+
   for (const future of futures) {
     const state = stockState[future.symbol];
     stockState[future.token] = state;
@@ -381,7 +402,7 @@ export async function setupState() {
 
   // Re-add ticker message handler
   ticker.onmessage = async (messageEvent: MessageEvent) => {
-    const messageData = JSON.parse(messageEvent.data as string) as TouchlineResponse;
+    const messageData = JSON.parse(messageEvent.data as string) as DepthResponse;
     const state = stockState[messageData.tk];
 
     if (!state) {
@@ -408,30 +429,30 @@ export async function setupState() {
         updated = true;
       }
     } else if (messageData.tk === state.future.token) {
-      if (messageData.bp1) {
-        state.future.bp = Number(messageData.bp1);
+      if (messageData.bp2) {
+        state.future.bp = Number(messageData.bp2);
         updated = true;
       }
-      if (messageData.sp1) {
-        state.future.sp = Number(messageData.sp1);
+      if (messageData.sp2) {
+        state.future.sp = Number(messageData.sp2);
         updated = true;
       }
     } else if (messageData.tk === state.pe.token) {
-      if (messageData.bp1) {
-        state.pe.bp = Number(messageData.bp1);
+      if (messageData.bp2) {
+        state.pe.bp = Number(messageData.bp2);
         updated = true;
       }
-      if (messageData.sp1) {
-        state.pe.sp = Number(messageData.sp1);
+      if (messageData.sp2) {
+        state.pe.sp = Number(messageData.sp2);
         updated = true;
       }
     } else if (messageData.tk === state.ce.token) {
-      if (messageData.bp1) {
-        state.ce.bp = Number(messageData.bp1);
+      if (messageData.bp2) {
+        state.ce.bp = Number(messageData.bp2);
         updated = true;
       }
-      if (messageData.sp1) {
-        state.ce.sp = Number(messageData.sp1);
+      if (messageData.sp2) {
+        state.ce.sp = Number(messageData.sp2);
         updated = true;
       }
     }
@@ -453,7 +474,7 @@ export async function setupState() {
   // Subscribe to all future and option tokens
   ticker.send(
     JSON.stringify({
-      t: 't',
+      t: 'd',
       k: nfoTokens.join('#'),
     })
   );

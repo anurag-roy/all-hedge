@@ -1,5 +1,6 @@
 // All F&O stocks to be monitored
 export default {
+  PORT: 3001,
   STOCKS_TO_INCLUDE: [
     'AARTIIND',
     'ABB',
@@ -189,6 +190,7 @@ export default {
   LTP_THRESHOLD: 200,
   LTP_MAX_CHANGE: 0.03,
   EXPIRY: '28-MAR-2024',
+  MARGIN: 1_00_000,
   ENTRY_VALUE_DIFFERENCE: 1000,
   EXIT_VALUE_DIFFERENCE: 700,
 };

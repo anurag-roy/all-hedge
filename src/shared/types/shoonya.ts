@@ -417,7 +417,7 @@ export type TouchlineResponse = {
   /**
    * Open interest
    */
-  oi?: string;
+  oi: string;
   /**
    * Previous day closing Open Interest
    */
@@ -442,4 +442,212 @@ export type TouchlineResponse = {
    * Best Sell Price 1
    */
   sp1: string;
+};
+
+export type DepthResponse = {
+  /**
+   * ‘dk’ represents depth acknowledgement
+   * ‘df’ represents depth feed
+   */
+  t: 'dk' | 'df';
+  /**
+   * Exchange name
+   */
+  e: 'NSE' | 'NFO' | 'CDS' | 'MCX' | 'BSE';
+  /**
+   * Scrip Token
+   */
+  tk: string;
+  /**
+   * LTP
+   */
+  lp: string;
+  /**
+   * Percentage change
+   */
+  pc: string;
+  /**
+   * volume
+   */
+  v: string;
+  /**
+   * Open price
+   */
+  o: string;
+  /**
+   * High price
+   */
+  h: string;
+  /**
+   * Low price
+   */
+  l: string;
+  /**
+   * Close price
+   */
+  c: string;
+  /**
+   * Average trade price
+   */
+  ap: string;
+  /**
+   * Last trade time
+   */
+  ltt: string;
+  /**
+   * Last trade quantity
+   */
+  ltq: string;
+  /**
+   * Total Buy Quantity
+   */
+  tbq: string;
+  /**
+   * Total Sell Quantity
+   */
+  tsq: string;
+  /**
+   * Best Buy Quantity 1
+   */
+  bq1: string;
+  /**
+   * Best Buy Quantity 2
+   */
+  bq2: string;
+  /**
+   * Best Buy Quantity 3
+   */
+  bq3: string;
+  /**
+   * Best Buy Quantity 4
+   */
+  bq4: string;
+  /**
+   * Best Buy Quantity 5
+   */
+  bq5: string;
+  /**
+   * Best Buy Price 1
+   */
+  bp1: string;
+  /**
+   * Best Buy Price 2
+   */
+  bp2: string;
+  /**
+   * Best Buy Price 3
+   */
+  bp3: string;
+  /**
+   * Best Buy Price 4
+   */
+  bp4: string;
+  /**
+   * Best Buy Price 5
+   */
+  bp5: string;
+  /**
+   * Best Buy Orders 1
+   */
+  bo1: string;
+  /**
+   * Best Buy Orders 2
+   */
+  bo2: string;
+  /**
+   * Best Buy Orders 3
+   */
+  bo3: string;
+  /**
+   * Best Buy Orders 4
+   */
+  bo4: string;
+  /**
+   * Best Buy Orders 5
+   */
+  bo5: string;
+  /**
+   * Best Sell Quantity 1
+   */
+  sq1: string;
+  /**
+   * Best Sell Quantity 2
+   */
+  sq2: string;
+  /**
+   * Best Sell Quantity 3
+   */
+  sq3: string;
+  /**
+   * Best Sell Quantity 4
+   */
+  sq4: string;
+  /**
+   * Best Sell Quantity 5
+   */
+  sq5: string;
+  /**
+   * Best Sell Price 1
+   */
+  sp1: string;
+  /**
+   * Best Sell Price 2
+   */
+  sp2: string;
+  /**
+   * Best Sell Price 3
+   */
+  sp3: string;
+  /**
+   * Best Sell Price 4
+   */
+  sp4: string;
+  /**
+   * Best Sell Price 5
+   */
+  sp5: string;
+  /**
+   * Best Sell Orders 1
+   */
+  so1: string;
+  /**
+   * so3
+   */
+  so2: string;
+  /**
+   * Best Sell Orders 4
+   */
+  so4: string;
+  /**
+   * Best Sell Orders 5
+   */
+  so5: string;
+  /**
+   * Lower Circuit Limit
+   */
+  lc: string;
+  /**
+   * Upper Circuit Limit
+   */
+  uc: string;
+  /**
+   * 52 week high low in other exchanges, Life time high low in mcx
+   */
+  '52h': string;
+  /**
+   * 52 week high low in other exchanges, Life time high low in mcx
+   */
+  '52l': string;
+  /**
+   * Open interest
+   */
+  oi: string;
+  /**
+   * Previous day closing Open Interest
+   */
+  poi: string;
+  /**
+   * Total open interest for underlying
+   */
+  toi: string;
 };
