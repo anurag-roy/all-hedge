@@ -1,8 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-export const getKeys = <T extends Object>(object: T) => Object.keys(object) as Array<keyof T>;
-
 export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
 
 export const getMonthName = (monthIndex: number) => {

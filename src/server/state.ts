@@ -1,60 +1,15 @@
+import { getEquities, getFutures, getInstrumentsForSymbol } from '@server/db/db.js';
+import { ticker } from '@server/globals/ticker.js';
+import { getBannedStocks } from '@server/lib/getBannedStocks.js';
+import { getMargin } from '@server/lib/getMargin.js';
+import { placeOrder } from '@server/lib/placeOrder.js';
+import { throttle } from '@server/lib/utils.js';
 import config from '@shared/config/config.js';
-import { getBannedStocks } from '@shared/lib/getBannedStocks.js';
-import { getMargin } from '@shared/lib/getMargin.js';
-import { placeOrder } from '@shared/lib/placeOrder.js';
-import { DepthResponse, TouchlineResponse } from '@shared/types/shoonya.js';
+import type { DepthResponse, TouchlineResponse } from '@shared/types/shoonya.js';
+import type { EnteredState, StockState } from '@shared/types/state.js';
 import { orderBy } from 'lodash-es';
 import { readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { MessageEvent } from 'ws';
-import { getEquities, getFutures, getInstrumentsForSymbol } from './db/db.js';
-import { ticker } from './globals/ticker.js';
-import { throttle } from './requestEngine.js';
-
-type OptionState = {
-  token: string;
-  tradingSymbol: string;
-  bp: number;
-  sp: number;
-};
-
-type StockState = {
-  symbol: string;
-  equity: {
-    token: string;
-    ltp: number;
-    upperBound: number;
-    lowerBound: number;
-  };
-  future: OptionState;
-  lotSize: number;
-  strike: number;
-  pe: OptionState;
-  ce: OptionState;
-};
-
-type EnteredOptionState = {
-  token: string;
-  tradingSymbol: string;
-  transactionType: string;
-  price: number;
-  quantity: number;
-};
-
-type EnteredState = {
-  condition: 1 | 2;
-  entryValueDifference: number;
-  time: string;
-  symbol: string;
-  equity: {
-    token: string;
-    ltp: number;
-  };
-  future: EnteredOptionState;
-  lotSize: number;
-  strike: number;
-  pe: EnteredOptionState;
-  ce: EnteredOptionState;
-};
 
 const stockState: Record<string, StockState> = {};
 const enteredStockState = getExistingEntries();

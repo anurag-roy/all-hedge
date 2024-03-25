@@ -1,6 +1,6 @@
+import { getInstruments } from '@server/lib/getInstruments.js';
+import { getKeys } from '@server/lib/utils.js';
 import config from '@shared/config/config.js';
-import { getInstruments } from '@shared/lib/getInstruments.js';
-import { getKeys } from '@shared/lib/utils.js';
 import Database from 'better-sqlite3';
 import { existsSync, mkdirSync } from 'node:fs';
 

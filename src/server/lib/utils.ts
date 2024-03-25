@@ -1,4 +1,9 @@
+import { createHash } from 'node:crypto';
 import { setInterval } from 'node:timers/promises';
+
+export const getKeys = <T extends Object>(object: T) => Object.keys(object) as Array<keyof T>;
+
+export const getHash = (input: string) => createHash('sha256').update(input).digest('hex');
 
 function* chunkedArgs<A>(args: A[], size: number) {
   for (let i = 0; i < args.length; i += size) {
