@@ -1,29 +1,8 @@
-import { getUserDetails } from '@server/lib/getUserDetails.js';
-import { getHash } from '@server/lib/utils.js';
+import { getHash, injectTokenIntoEnv } from '@server/lib/utils.js';
 import env from '@shared/config/env.json';
-import { Request, Response } from 'express';
-import { readFileSync, writeFileSync } from 'fs';
+import type { Request, Response } from 'express';
+import { writeFileSync } from 'fs';
 import ky from 'ky';
-
-const injectTokenIntoEnv = async (token?: string) => {
-  if (token) {
-    process.env.token = token;
-  } else {
-    try {
-      const readToken = readFileSync('.data/token.txt', 'utf-8');
-      process.env.token = readToken;
-
-      try {
-        await getUserDetails();
-      } catch (error) {
-        console.log('Token expired');
-        delete process.env.token;
-      }
-    } catch (error) {
-      console.log('Token file not found. Skipping token setting...');
-    }
-  }
-};
 
 export default async function (req: Request, res: Response) {
   const { totp } = req.query;
@@ -51,7 +30,7 @@ export default async function (req: Request, res: Response) {
     }
 
     writeFileSync('src/data/token.txt', loginResponse.susertoken, 'utf-8');
-    injectTokenIntoEnv(loginResponse.susertoken);
+    await injectTokenIntoEnv(loginResponse.susertoken);
 
     res.json({ message: 'Login successful!' });
   } catch (error) {

@@ -1,13 +1,30 @@
 import loginHandler from '@server/api/login.js';
+import { injectTokenIntoEnv } from '@server/lib/utils.js';
+import { AppState } from '@server/state.js';
 import config from '@shared/config/config.js';
+import type { AppStateProps } from '@shared/types/state.js';
 import express from 'express';
 import ViteExpress from 'vite-express';
 import { WebSocketServer } from 'ws';
-import { setupState } from './state.js';
+
+await injectTokenIntoEnv();
 
 const app = express();
 
+app.get('/loginStatus', async (_req, res) => {
+  if (process.env.token) {
+    res.status(200).json({ message: 'Logged in' });
+  } else {
+    res.status(401).json({ message: 'Not logged in' });
+  }
+});
 app.post('/login', loginHandler);
+app.post('/start', async (req, res) => {
+  const body = req.body as AppStateProps;
+  const appState = new AppState(body);
+  await appState.setupState();
+  res.status(200).json({ message: 'Started' });
+});
 
 const server = app.listen(config.PORT, () => console.log(`Server started on http://localhost:${config.PORT}`));
 
@@ -20,5 +37,3 @@ wss.on('connection', (ws) => {
 });
 
 ViteExpress.bind(app, server);
-
-await setupState();

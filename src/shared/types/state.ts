@@ -43,3 +43,10 @@ export type EnteredState = {
   pe: EnteredOptionState;
   ce: EnteredOptionState;
 };
+
+export type AppStateProps = {
+  expiry: string;
+  accountMargin: number;
+  entryValueDifference: number;
+  exitValueDifference: number;
+};

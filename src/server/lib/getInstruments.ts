@@ -1,4 +1,4 @@
-import { ShoonyaInstrument } from '@shared/types/shoonya.js';
+import type { ShoonyaInstrument } from '@shared/types/shoonya.js';
 import JSZip from 'jszip';
 import ky from 'ky';
 
