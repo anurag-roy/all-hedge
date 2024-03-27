@@ -12,7 +12,7 @@ export const injectTokenIntoEnv = async (token?: string) => {
     process.env.token = token;
   } else {
     try {
-      const readToken = readFileSync('src/data/token.txt', 'utf-8');
+      const readToken = readFileSync('.data/token.txt', 'utf-8');
       process.env.token = readToken;
 
       try {

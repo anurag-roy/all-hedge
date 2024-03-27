@@ -362,7 +362,11 @@ export class AppState {
 
     // Filter out futures according to margin
     console.log(`Checking margins for ${allfutures.length} futures...`);
-    const getMarginArgs: Array<Parameters<typeof getMargin>> = allfutures.map((f) => [f.tradingSymbol, 0, f.lotSize]);
+    const getMarginArgs: Array<Parameters<typeof getMargin>> = allfutures.map((f) => [
+      f.tradingSymbol,
+      0.05,
+      f.lotSize,
+    ]);
     const margins = await throttle(getMargin, getMarginArgs);
     const futures = allfutures.filter((future, index) => {
       const marginResponse = margins[index];
