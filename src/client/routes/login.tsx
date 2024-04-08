@@ -1,30 +1,15 @@
 import { Button } from '@client/components/ui/button';
 import { Input } from '@client/components/ui/input';
 import { useToast } from '@client/components/ui/use-toast';
+import { api } from '@client/lib/api';
 import env from '@shared/config/env.json';
-import ky from 'ky';
 import * as React from 'react';
-import { ActionFunctionArgs, Form, redirect } from 'react-router-dom';
-
-export async function action({ request }: ActionFunctionArgs) {
-  const formData = await request.formData();
-  let finalOtp = '';
-  for (const value of formData.values()) {
-    finalOtp = finalOtp + value;
-  }
-  console.log('Final OTP:', finalOtp);
-  try {
-    await ky('/api/login?totp=' + finalOtp).json();
-    return redirect('/');
-  } catch (error) {
-    console.error('Error while logging in', error);
-    return null;
-  }
-}
+import { useNavigate } from 'react-router-dom';
 
 const TOTP_LENGTH = 6;
 export default function Login() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [buttonState, setButtonState] = React.useState<'confirm' | 'confirming'>('confirm');
 
   const fieldSetRef = React.useRef<HTMLFieldSetElement>(null);
@@ -46,20 +31,39 @@ export default function Login() {
     }
   };
 
+  const confirmTotp = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    let finalOtp = '';
+    for (const value of formData.values()) {
+      finalOtp = finalOtp + value;
+    }
+    setButtonState('confirming');
+    try {
+      await api
+        .post('login', {
+          searchParams: { totp: finalOtp },
+        })
+        .json();
+      navigate('/');
+    } catch (err) {
+      console.error('Error while logging in', err);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Error while logging in. Please try again.',
+      });
+    } finally {
+      setButtonState('confirm');
+    }
+  };
+
   return (
-    <main className='container relative h-full flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0'>
-      <div className='relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex'>
-        <div
-          className='absolute inset-0 bg-cover'
-          style={{
-            backgroundImage: 'url("landing.webp")',
-          }}
-        />
-      </div>
+    <main className='relative w-full h-full flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0'>
       <div className='lg:p-8'>
         <div className='mx-auto flex w-full flex-col justify-center sm:w-[350px]'>
           <h1 className='text-center text-2xl font-semibold tracking-tight'>Your session has expired.</h1>
-          <Form method='post' className='flex flex-col items-center gap-2 py-2'>
+          <form onSubmit={confirmTotp} method='post' className='flex flex-col items-center gap-2 py-2'>
             <fieldset className='mb-4 flex w-fit flex-row gap-3' ref={fieldSetRef}>
               <legend className='mb-6 text-center text-sm text-muted-foreground'>
                 Please enter your TOTP to login again.
@@ -106,8 +110,16 @@ export default function Login() {
                 </>
               )}
             </Button>
-          </Form>
+          </form>
         </div>
+      </div>
+      <div className='relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex'>
+        <div
+          className='absolute inset-0 bg-cover'
+          style={{
+            backgroundImage: 'url("landing.webp")',
+          }}
+        />
       </div>
     </main>
   );

@@ -7,7 +7,7 @@ import config from '@shared/config/config.js';
 import env from '@shared/config/env.json';
 import type { DepthResponse, TouchlineResponse } from '@shared/types/shoonya.js';
 import type { AppStateProps, EnteredState, StockState } from '@shared/types/state.js';
-import { orderBy } from 'lodash-es';
+import * as _ from 'lodash-es';
 import { readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { WebSocket, type MessageEvent } from 'ws';
 
@@ -395,7 +395,7 @@ export class AppState {
     for (const symbol of passedEquitySymbols) {
       const state = this.stockState[symbol];
       const options = await getInstrumentsForSymbol(this.expiry, symbol);
-      const nearestOptions = orderBy(options, (o) => Math.abs(state.equity.ltp - o.strikePrice)).slice(0, 2);
+      const nearestOptions = _.orderBy(options, (o) => Math.abs(state.equity.ltp - o.strikePrice)).slice(0, 2);
       const strike = nearestOptions[0].strikePrice;
 
       // Check if strike price is within LTP bounds

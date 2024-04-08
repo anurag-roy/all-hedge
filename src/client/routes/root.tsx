@@ -1,18 +1,26 @@
-import { Button } from '@client/components/ui/button';
-import ky from 'ky';
-import * as React from 'react';
+import { Header } from '@client/components/header';
+import { SubscriptionForm } from '@client/components/subscription-form';
+import { api } from '@client/lib/api';
 import { redirect } from 'react-router-dom';
 
 export async function loader() {
   try {
-    await ky.get('api/loginStatus').json();
+    await api('loginStatus').json();
   } catch (error) {
     return redirect('/login');
   }
+  return null;
 }
 
 export default function Root() {
-  const [count, setCount] = React.useState(0);
-
-  return <Button onClick={() => setCount((count) => count + 1)}>count is {count}</Button>;
+  return (
+    <>
+      <Header />
+      <main className='container'>
+        <section>
+          <SubscriptionForm />
+        </section>
+      </main>
+    </>
+  );
 }

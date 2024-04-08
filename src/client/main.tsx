@@ -4,8 +4,9 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
+import { ThemeProvider } from '@client/components/theme-provider';
 import { Toaster } from '@client/components/ui/toaster';
-import Login, { action as loginAction } from '@client/routes/login';
+import Login from '@client/routes/login';
 import Root, { loader as rootLoader } from '@client/routes/root';
 
 const router = createBrowserRouter([
@@ -17,13 +18,14 @@ const router = createBrowserRouter([
   {
     path: '/login',
     element: <Login />,
-    action: loginAction,
   },
 ]);
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
-    <Toaster />
+    <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
+      <RouterProvider router={router} />
+      <Toaster />
+    </ThemeProvider>
   </React.StrictMode>
 );

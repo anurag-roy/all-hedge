@@ -1,5 +1,5 @@
 import { db } from '@server/globals/db.js';
-import { groupBy } from 'lodash-es';
+import * as _ from 'lodash-es';
 
 export const getEquities = async () => {
   const equityStocks = await db.instrument.findMany({
@@ -46,7 +46,7 @@ export const getInstrumentsForSymbol = async (expiry: string, symbol: string) =>
   });
 
   // Remove unpaired options
-  const optionsGroupedByStrike = groupBy(options, (o) => o.strikePrice);
+  const optionsGroupedByStrike = _.groupBy(options, (o) => o.strikePrice);
   return Object.values(optionsGroupedByStrike)
     .filter((o) => o.length === 2)
     .flatMap((o) => o);
