@@ -1,27 +1,22 @@
 import loginHandler from '@server/api/login.js';
+import loginStatusHandler from '@server/api/loginStatus.js';
+import startHandler from '@server/api/start.js';
+import userDetailsHandler from '@server/api/userDetails.js';
 import { injectTokenIntoEnv } from '@server/lib/utils.js';
-import { AppState } from '@server/state.js';
 import config from '@shared/config/config.js';
-import type { AppStateProps } from '@shared/types/state.js';
 import express from 'express';
 import ViteExpress from 'vite-express';
 import { WebSocketServer } from 'ws';
-import loginStatusHandler from './api/loginStatus.js';
-import userDetailsHandler from './api/userDetails.js';
 
 await injectTokenIntoEnv();
 
 const app = express();
 
+app.use(express.json());
 app.get('/api/loginStatus', loginStatusHandler);
 app.post('/api/login', loginHandler);
 app.get('/api/userDetails', userDetailsHandler);
-app.post('/api/start', async (req, res) => {
-  const body = req.body as AppStateProps;
-  const appState = new AppState(body);
-  await appState.setupState();
-  res.status(200).json({ message: 'Started' });
-});
+app.post('/api/start', startHandler);
 
 const server = app.listen(config.PORT, () => console.log(`Server started on http://localhost:${config.PORT}`));
 

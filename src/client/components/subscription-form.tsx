@@ -48,16 +48,16 @@ export function SubscriptionForm() {
         entryValueDifference: values.hedgePrice,
         exitValueDifference: values.exitValueDifference,
       };
-      await api.post('start', { json: startBody });
+      await api.post('start', { json: startBody, timeout: false });
       setButtonState('subscribed');
       toast({
-        title: 'All set!',
-        description: 'Subscription request received. You will be notified on completion.',
+        title: 'Success',
+        description: 'Strategy started with given values',
       });
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to start subscription. Please retry again.',
+        description: 'Failed to start subscription. Please try again.',
         variant: 'destructive',
       });
       setButtonState('subscribe');
