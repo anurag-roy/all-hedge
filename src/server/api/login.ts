@@ -1,7 +1,8 @@
-import { getHash } from '@server/lib/utils.js';
+import { getHash, injectTokenIntoEnv } from '@server/lib/utils.js';
 import env from '@shared/config/env.json';
 import type { Request, Response } from 'express';
-import { setTimeout } from 'timers/promises';
+import ky from 'ky';
+import { writeFileSync } from 'node:fs';
 
 export default async function (req: Request, res: Response) {
   const { totp } = req.query;
@@ -17,25 +18,22 @@ export default async function (req: Request, res: Response) {
     source: 'API',
   };
 
-  await setTimeout(2000);
+  try {
+    const loginResponse = await ky
+      .post('https://api.shoonya.com/NorenWClientTP/QuickAuth', {
+        body: 'jData=' + JSON.stringify(data),
+      })
+      .json<any>();
 
-  res.json({ message: 'Login successful!' });
-  // try {
-  //   const loginResponse = await ky
-  //     .post('https://api.shoonya.com/NorenWClientTP/QuickAuth', {
-  //       body: 'jData=' + JSON.stringify(data),
-  //     })
-  //     .json<any>();
+    if (loginResponse.stat === 'Not_Ok') {
+      throw new Error(loginResponse.emsg);
+    }
 
-  //   if (loginResponse.stat === 'Not_Ok') {
-  //     throw new Error(loginResponse.emsg);
-  //   }
+    writeFileSync('.data/token.txt', loginResponse.susertoken, 'utf-8');
+    await injectTokenIntoEnv(loginResponse.susertoken);
 
-  //   writeFileSync('.data/token.txt', loginResponse.susertoken, 'utf-8');
-  //   await injectTokenIntoEnv(loginResponse.susertoken);
-
-  //   res.json({ message: 'Login successful!' });
-  // } catch (error) {
-  //   res.status(500).json({ message: 'Error while logging in', error });
-  // }
+    res.json({ message: 'Login successful!' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error while logging in', error });
+  }
 }

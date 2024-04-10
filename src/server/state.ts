@@ -16,8 +16,10 @@ export class AppState {
   accountMargin: number;
   entryValueDifference: number;
   exitValueDifference: number;
+  client: WebSocket;
+  logId = 0;
 
-  ticker!: WebSocket;
+  ticker: WebSocket | undefined;
   stockState: Record<string, StockState> = {};
   enteredStockState = this.getExistingEntries();
   enteredTokens = new Set(
@@ -30,11 +32,12 @@ export class AppState {
   );
   checkForEntry = true;
 
-  constructor({ expiry, accountMargin, entryValueDifference, exitValueDifference }: AppStateProps) {
+  constructor({ expiry, accountMargin, entryValueDifference, exitValueDifference, client }: AppStateProps) {
     this.expiry = expiry;
     this.accountMargin = accountMargin;
     this.entryValueDifference = entryValueDifference;
     this.exitValueDifference = exitValueDifference;
+    this.client = client;
   }
 
   getExistingEntries() {
@@ -58,12 +61,12 @@ export class AppState {
       (equity.ltp - future.sp + Math.max(strike - equity.ltp, 0) - pe.sp + ce.bp - Math.max(equity.ltp - strike, 0)) *
       lotSize;
     if (result1 >= this.entryValueDifference) {
-      console.log('ENTRY CONDITION 1 satisfied for', symbol);
+      this.log(`ENTRY CONDITION 1 satisfied for ${symbol}`);
       this.checkForEntry = false;
       await Promise.all([
-        placeOrder('B', future.sp, lotSize, future.tradingSymbol),
-        placeOrder('B', pe.sp, lotSize, pe.tradingSymbol),
-        placeOrder('S', ce.bp, lotSize, ce.tradingSymbol),
+        placeOrder('B', future.sp, lotSize, future.tradingSymbol).then((message) => this.log(message)),
+        placeOrder('B', pe.sp, lotSize, pe.tradingSymbol).then((message) => this.log(message)),
+        placeOrder('S', ce.bp, lotSize, ce.tradingSymbol).then((message) => this.log(message)),
       ]);
       // TODO: get this from order response
       const orderState: EnteredState = {
@@ -112,12 +115,12 @@ export class AppState {
       (future.bp - equity.ltp + pe.bp - Math.max(strike - equity.ltp, 0) + Math.max(equity.ltp - strike, 0) - ce.sp) *
       lotSize;
     if (result2 >= this.entryValueDifference) {
-      console.log('ENTRY CONDITION 2 satisfied for', symbol);
+      this.log(`ENTRY CONDITION 2 satisfied for ${symbol}`);
       this.checkForEntry = false;
       await Promise.all([
-        placeOrder('S', future.bp, lotSize, future.tradingSymbol),
-        placeOrder('S', pe.bp, lotSize, pe.tradingSymbol),
-        placeOrder('B', ce.sp, lotSize, ce.tradingSymbol),
+        placeOrder('S', future.bp, lotSize, future.tradingSymbol).then((message) => this.log(message)),
+        placeOrder('S', pe.bp, lotSize, pe.tradingSymbol).then((message) => this.log(message)),
+        placeOrder('B', ce.sp, lotSize, ce.tradingSymbol).then((message) => this.log(message)),
       ]);
       // TODO: Get this from order response
       const orderState: EnteredState = {
@@ -172,11 +175,11 @@ export class AppState {
         (equity.ltp - future.bp + Math.max(strike - equity.ltp, 0) - pe.bp + ce.sp - Math.max(equity.ltp - strike, 0)) *
         lotSize;
       if (result <= this.exitValueDifference) {
-        console.log('EXIT CONDITION 1 satisfied for', symbol);
+        this.log(`EXIT CONDITION 1 satisfied for ${symbol}`);
         await Promise.all([
-          placeOrder('S', future.bp, entry.future.quantity, future.tradingSymbol),
-          placeOrder('S', pe.bp, entry.pe.quantity, pe.tradingSymbol),
-          placeOrder('B', ce.sp, entry.ce.quantity, ce.tradingSymbol),
+          placeOrder('S', future.bp, entry.future.quantity, future.tradingSymbol).then((message) => this.log(message)),
+          placeOrder('S', pe.bp, entry.pe.quantity, pe.tradingSymbol).then((message) => this.log(message)),
+          placeOrder('B', ce.sp, entry.ce.quantity, ce.tradingSymbol).then((message) => this.log(message)),
         ]);
         rmSync(`.data/entries/${symbol}.json`);
         this.enteredTokens.delete(equity.token);
@@ -190,11 +193,11 @@ export class AppState {
         (future.sp - equity.ltp + pe.sp - Math.max(strike - equity.ltp, 0) + Math.max(equity.ltp - strike, 0) - ce.bp) *
         lotSize;
       if (result <= this.exitValueDifference) {
-        console.log('EXIT CONDITION 2 satisfied for', symbol);
+        this.log(`EXIT CONDITION 2 satisfied for ${symbol}`);
         await Promise.all([
-          placeOrder('B', future.sp, entry.future.quantity, future.tradingSymbol),
-          placeOrder('B', pe.sp, entry.pe.quantity, pe.tradingSymbol),
-          placeOrder('S', ce.bp, entry.ce.quantity, ce.tradingSymbol),
+          placeOrder('B', future.sp, entry.future.quantity, future.tradingSymbol).then((message) => this.log(message)),
+          placeOrder('B', pe.sp, entry.pe.quantity, pe.tradingSymbol).then((message) => this.log(message)),
+          placeOrder('S', ce.bp, entry.ce.quantity, ce.tradingSymbol).then((message) => this.log(message)),
         ]);
         rmSync(`.data/entries/${symbol}.json`);
         this.enteredTokens.delete(equity.token);
@@ -209,6 +212,11 @@ export class AppState {
   async connectTicker() {
     this.ticker = await new Promise((resolve, reject) => {
       const socket = new WebSocket('wss://api.shoonya.com/NorenWSTP/');
+
+      const timeout = setTimeout(() => {
+        reject('Ticker connection timed out.');
+      }, 3000);
+
       socket.onopen = () => {
         console.log('Ticker initialized and ready to connect...');
 
@@ -223,20 +231,11 @@ export class AppState {
         );
       };
 
-      socket.onclose = () => {
-        console.log('Ticker connection closed.');
-        reject('Ticker connection closed.');
-      };
-
-      socket.onerror = (error) => {
-        console.log('Ticker error', error);
-        reject(error);
-      };
-
       socket.onmessage = (messageEvent: MessageEvent) => {
         const messageData = JSON.parse(messageEvent.data as string);
         if (messageData.t === 'ck' && messageData.s === 'OK') {
           console.log('Ticker connected successfully!');
+          clearTimeout(timeout);
           resolve(socket);
         }
       };
@@ -244,9 +243,14 @@ export class AppState {
   }
 
   async setupState() {
-    await this.connectTicker();
+    try {
+      await this.connectTicker();
+    } catch (error) {
+      await this.connectTicker();
+    }
 
     const bannedStocks = await getBannedStocks();
+    this.log(`Banned stocks (${bannedStocks.length}): ${bannedStocks.join(', ')}`);
     // Get equities
     const equities = (await getEquities()).filter((e) => !bannedStocks.includes(e.symbol));
 
@@ -292,12 +296,12 @@ export class AppState {
 
     const passedEquitySymbols: string[] = [];
     // Filter out equities that do not satisfy the LTP threshold
-    console.log(`Checking LTPs for ${equities.length} equities...`);
+    this.log(`Checking LTPs for ${equities.length} equities...`);
     await new Promise<void>((resolve, reject) => {
       let responseReceived = 0;
       const tokensToUnsubscribe: string[] = [];
 
-      this.ticker.onmessage = (messageEvent: MessageEvent) => {
+      this.ticker!.onmessage = (messageEvent: MessageEvent) => {
         const messageData = JSON.parse(messageEvent.data as string) as TouchlineResponse;
 
         if (messageData.t === 'tk' && messageData.lp) {
@@ -309,6 +313,7 @@ export class AppState {
             tokensToUnsubscribe.push(`NSE|${messageData.tk}`);
 
             // Remove from state
+            this.log(`LTP below threshold for ${this.stockState[messageData.tk].symbol}`);
             const state = this.stockState[messageData.tk];
             const name = state.symbol;
             delete this.stockState[name];
@@ -324,25 +329,25 @@ export class AppState {
 
           // Resolve once all responses are received
           if (responseReceived === equities.length) {
-            console.log(`${tokensToUnsubscribe.length} equities did not satisfy the LTP threshold...`);
-            this.ticker.send(
+            this.log(`${tokensToUnsubscribe.length} equities did not satisfy the LTP threshold...`);
+            this.ticker!.send(
               JSON.stringify({
                 t: 'u',
                 k: tokensToUnsubscribe.join('#'),
               })
             );
-            this.ticker.onmessage = null;
-            this.ticker.onerror = null;
+            this.ticker!.onmessage = null;
+            this.ticker!.onerror = null;
             resolve();
           }
         }
       };
 
-      this.ticker.onerror = (error) => {
+      this.ticker!.onerror = (error) => {
         reject(error);
       };
 
-      this.ticker.send(
+      this.ticker!.send(
         JSON.stringify({
           t: 't',
           k: equities.map((equity) => `NSE|${equity.token}`).join('#'),
@@ -361,7 +366,7 @@ export class AppState {
     const allfutures = await getFutures(this.expiry, passedEquitySymbols);
 
     // Filter out futures according to margin
-    console.log(`Checking margins for ${allfutures.length} futures...`);
+    this.log(`Checking margins for ${allfutures.length} futures...`);
     const getMarginArgs: Array<Parameters<typeof getMargin>> = allfutures.map((f) => [
       f.tradingSymbol,
       0.05,
@@ -374,13 +379,17 @@ export class AppState {
         console.error('Error fetching margin for', future.symbol, marginResponse.reason);
         return false;
       }
-      if (marginResponse.value.remarks === 'Insufficient Balance') {
-        return false;
-      }
+      // if (marginResponse.value.remarks === 'Insufficient Balance') {
+      //   return false;
+      // }
       const margin = Number(marginResponse.value.ordermargin);
-      return margin <= (0.9 * this.accountMargin) / 2;
+      const isMarginSatisfied = margin <= (0.9 * this.accountMargin) / 2;
+      if (!isMarginSatisfied) {
+        this.log(`Margin not satisfied for ${future.symbol}`);
+      }
+      return isMarginSatisfied;
     });
-    console.log(`${allfutures.length - futures.length} futures did not satisfy the margin requirement...`);
+    this.log(`${allfutures.length - futures.length} futures did not satisfy the margin requirement...`);
 
     for (const future of futures) {
       const state = this.stockState[future.symbol];
@@ -400,13 +409,13 @@ export class AppState {
 
       // Check if strike price is within LTP bounds
       if (strike >= state.equity.upperBound || strike <= state.equity.lowerBound) {
-        console.log('Strike price not within LTP bounds for', symbol);
+        this.log(`Strike price not within LTP bounds for ${symbol}`);
 
         // Delete state
         delete this.stockState[state.symbol];
         delete this.stockState[state.equity.token];
         delete this.stockState[state.future.token];
-        this.ticker.send(JSON.stringify({ t: 'u', k: `NSE|${state.equity.token}` }));
+        this.ticker!.send(JSON.stringify({ t: 'u', k: `NSE|${state.equity.token}` }));
         const foundIndex = nfoTokens.indexOf(`NFO|${state.future.token}`);
         if (foundIndex !== -1) {
           nfoTokens.splice(foundIndex, 1);
@@ -425,7 +434,7 @@ export class AppState {
     }
 
     // Re-add ticker message handler
-    this.ticker.onmessage = async (messageEvent: MessageEvent) => {
+    this.ticker!.onmessage = async (messageEvent: MessageEvent) => {
       const messageData = JSON.parse(messageEvent.data as string) as DepthResponse;
       const state = this.stockState[messageData.tk];
 
@@ -441,12 +450,12 @@ export class AppState {
             (!this.enteredTokens.has(messageData.tk) && newLtp > state.equity.upperBound) ||
             newLtp < state.equity.lowerBound
           ) {
-            console.log('LTP change exceeded for', state.symbol);
+            this.log(`LTP change exceeded for ${state.symbol}`);
             // Delete state
             delete this.stockState[state.symbol];
             delete this.stockState[state.equity.token];
             delete this.stockState[state.future.token];
-            this.ticker.send(JSON.stringify({ t: 'u', k: `NSE|${state.equity.token}` }));
+            this.ticker!.send(JSON.stringify({ t: 'u', k: `NSE|${state.equity.token}` }));
             return;
           }
           state.equity.ltp = Number(messageData.lp);
@@ -496,11 +505,22 @@ export class AppState {
     writeFileSync('.data/state.json', JSON.stringify(this.stockState, null, 4), 'utf-8');
 
     // Subscribe to all future and option tokens
-    this.ticker.send(
+    this.ticker!.send(
       JSON.stringify({
         t: 'd',
         k: nfoTokens.join('#'),
       })
     );
+  }
+
+  destroyState() {
+    this.ticker!.close();
+    this.ticker = undefined;
+  }
+
+  log(message: string) {
+    this.logId++;
+    console.log(message);
+    this.client.send(JSON.stringify({ type: 'log', data: { id: this.logId, timeStamp: Date.now(), message } }));
   }
 }

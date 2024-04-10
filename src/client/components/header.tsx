@@ -23,7 +23,7 @@ export function Header() {
       <div className='container flex items-center gap-4 py-4'>
         <hgroup className='mr-auto flex items-center gap-2'>
           <NseLogo />
-          <h1 className='text-2xl font-bold text-zinc-900 dark:text-zinc-100'>All Option Chain</h1>
+          <h1 className='text-2xl font-bold text-zinc-900 dark:text-zinc-100'>All Hedge Strategy</h1>
         </hgroup>
         <ModeToggle />
         <UserNav />

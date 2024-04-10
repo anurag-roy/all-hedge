@@ -2,6 +2,7 @@ import { getInstruments } from '@server/lib/getInstruments.js';
 import { getKeys } from '@server/lib/utils.js';
 import config from '@shared/config/config.js';
 import Database from 'better-sqlite3';
+import * as _ from 'lodash-es';
 import { existsSync, mkdirSync } from 'node:fs';
 
 // Create the sqlite db here
@@ -12,7 +13,10 @@ const getSqliteType = (key: string, value: any) => (typeof value === 'number' ? 
 const nseInstruments = await getInstruments('NSE');
 const nfoInstruments = await getInstruments('NFO');
 
-const instruments = [...nseInstruments, ...nfoInstruments].filter((i) => config.STOCKS_TO_INCLUDE.includes(i.symbol));
+const filteredInstruments = [...nseInstruments, ...nfoInstruments].filter((i) =>
+  config.STOCKS_TO_INCLUDE.includes(i.symbol)
+);
+const instruments = _.orderBy(filteredInstruments, (i) => [i.symbol]);
 
 const columns = getKeys(instruments[0]);
 

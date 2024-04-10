@@ -1,3 +1,5 @@
+import type { WebSocket } from 'ws';
+
 export type OptionState = {
   token: string;
   tradingSymbol: string;
@@ -49,4 +51,5 @@ export type AppStateProps = {
   accountMargin: number;
   entryValueDifference: number;
   exitValueDifference: number;
+  client: WebSocket;
 };

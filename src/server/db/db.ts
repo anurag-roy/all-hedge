@@ -17,7 +17,9 @@ export const getFutures = async (expiry: string, symbols?: string[]) => {
   const futures = await db.instrument.findMany({
     where: {
       instrument: 'FUTSTK',
-      expiry: expiry,
+      expiry: {
+        endsWith: expiry,
+      },
       ...(symbols
         ? {
             symbol: {
@@ -38,7 +40,9 @@ export const getInstrumentsForSymbol = async (expiry: string, symbol: string) =>
       optionType: {
         in: ['CE', 'PE'],
       },
-      expiry: expiry,
+      expiry: {
+        endsWith: expiry,
+      },
     },
     orderBy: {
       strikePrice: 'asc',

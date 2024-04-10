@@ -3,11 +3,9 @@ import { Form } from '@client/components/ui/form';
 import { NumberInputFormField } from '@client/components/ui/number-input-form-field';
 import { SelectFormField } from '@client/components/ui/select-form-field';
 import { useToast } from '@client/components/ui/use-toast';
-import { api } from '@client/lib/api';
 import { getExpiryOptions } from '@client/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { UpdateIcon } from '@radix-ui/react-icons';
-import { AppStateProps } from '@shared/types/state';
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -23,7 +21,11 @@ const formSchema = z.object({
   exitValueDifference: z.number(),
 });
 
-export function SubscriptionForm() {
+type SubscriptionFormProps = {
+  setWs: React.Dispatch<React.SetStateAction<WebSocket | null>>;
+};
+
+export function SubscriptionForm({ setWs }: SubscriptionFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     values: {
@@ -38,22 +40,33 @@ export function SubscriptionForm() {
   const [buttonState, setButtonState] = React.useState<ButtonState>('subscribe');
   const { toast } = useToast();
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
     setButtonState('subscribing');
 
     try {
-      const startBody: AppStateProps = {
-        expiry: values.expiry,
-        accountMargin: values.accountMargin,
-        entryValueDifference: values.hedgePrice,
-        exitValueDifference: values.exitValueDifference,
+      const { expiry, accountMargin, hedgePrice, exitValueDifference } = values;
+      const wssUrl = new URL('/api/wss', location.href);
+      wssUrl.protocol = wssUrl.protocol.replace('http', 'ws');
+      wssUrl.searchParams.set('expiry', expiry);
+      wssUrl.searchParams.set('accountMargin', accountMargin.toString());
+      wssUrl.searchParams.set('entryValueDifference', hedgePrice.toString());
+      wssUrl.searchParams.set('exitValueDifference', exitValueDifference.toString());
+
+      const ws = new WebSocket(wssUrl);
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'ack') {
+          toast({
+            title: 'Success',
+            description: 'Strategy started with given values',
+          });
+          ws.onmessage = null;
+          setWs(ws);
+          setButtonState('subscribed');
+        }
       };
-      await api.post('start', { json: startBody, timeout: false });
+
       setButtonState('subscribed');
-      toast({
-        title: 'Success',
-        description: 'Strategy started with given values',
-      });
     } catch (error) {
       toast({
         title: 'Error',

@@ -24,10 +24,7 @@ export const placeOrder = async (
   //   })
   //   .json<any>();
 
-  const orderResult = {};
-  console.log(
-    `${transactionType === 'B' ? 'BUY' : 'SELL'} Order placed successfully for ${tradingSymbol} at price ${price} and quantity ${quantity}`
-  );
+  const orderResult = `${transactionType === 'B' ? 'BUY' : 'SELL'} Order placed successfully for ${tradingSymbol} at price ${price} and quantity ${quantity}`;
 
   return orderResult;
 };
