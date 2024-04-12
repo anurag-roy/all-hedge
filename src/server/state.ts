@@ -210,6 +210,7 @@ export class AppState {
   }
 
   async connectTicker() {
+    console.log('Connecting to ticker...');
     this.ticker = await new Promise((resolve, reject) => {
       const socket = new WebSocket('wss://api.shoonya.com/NorenWSTP/');
 

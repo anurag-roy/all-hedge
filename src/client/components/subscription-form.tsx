@@ -30,10 +30,10 @@ export function SubscriptionForm({ setWs }: SubscriptionFormProps) {
     resolver: zodResolver(formSchema),
     values: {
       accountMargin: 100000,
-      hedgePrice: 1000,
+      hedgePrice: 2000,
       expiry: expiryOptions[0],
       lotSize: 1,
-      exitValueDifference: 200,
+      exitValueDifference: 1000,
     },
   });
   form;
@@ -80,11 +80,11 @@ export function SubscriptionForm({ setWs }: SubscriptionFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className='flex gap-12 p-4'>
+      <form noValidate onSubmit={form.handleSubmit(onSubmit)} className='flex gap-12 p-4'>
         <NumberInputFormField form={form} name='accountMargin' min={0} step={10000} />
         <NumberInputFormField form={form} name='hedgePrice' min={0} step={100} />
         <SelectFormField form={form} name='expiry' options={expiryOptions} />
-        {/* <NumberInputFormField form={form} name='lotSize' min={0} step={1} /> */}
+        <NumberInputFormField form={form} name='lotSize' min={0} step={1} />
         <NumberInputFormField form={form} name='exitValueDifference' min={0} step={100} />
         <Button type='submit' className='mt-[30px] ml-auto' disabled={buttonState !== 'subscribe'}>
           {buttonState === 'subscribe' ? 'Subscribe' : null}
