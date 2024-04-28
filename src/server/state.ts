@@ -61,8 +61,27 @@ export class AppState {
       (equity.ltp - future.sp + Math.max(strike - equity.ltp, 0) - pe.sp + ce.bp - Math.max(equity.ltp - strike, 0)) *
       lotSize;
     if (result1 >= this.entryValueDifference) {
-      this.log(`ENTRY CONDITION 1 satisfied for ${symbol}`);
+      if (!state.isFirstPassSatisfied) {
+        const log = [
+          `First pass entry satisfied for ${symbol}`,
+          `Future (${future.tradingSymbol}) Seller Price: ${future.sp}`,
+          `Call (${ce.tradingSymbol}) Buyer Price: ${ce.bp}`,
+          `Put (${pe.tradingSymbol}) Seller Price: ${pe.sp}`,
+        ].join('\n');
+        this.log(log);
+        state.isFirstPassSatisfied = true;
+        return;
+      }
+
+      const log = [
+        `Second pass entry satisfied for ${symbol}`,
+        `Future (${future.tradingSymbol}) Seller Price: ${future.sp}`,
+        `Call (${ce.tradingSymbol}) Buyer Price: ${ce.bp}`,
+        `Put (${pe.tradingSymbol}) Seller Price: ${pe.sp}`,
+      ].join('\n');
+      this.log(log);
       this.checkForEntry = false;
+      state.isFirstPassSatisfied = false;
       await Promise.all([
         placeOrder('B', future.sp, lotSize, future.tradingSymbol).then((message) => this.log(message)),
         placeOrder('B', pe.sp, lotSize, pe.tradingSymbol).then((message) => this.log(message)),
@@ -108,6 +127,17 @@ export class AppState {
       this.enteredTokens.add(pe.token);
       this.enteredTokens.add(ce.token);
       this.enteredStockState[symbol] = orderState;
+    } else {
+      if (state.isFirstPassSatisfied) {
+        const log = [
+          `Second pass entry not satisfied for ${symbol}`,
+          `Future (${future.tradingSymbol}) Seller Price: ${future.sp}`,
+          `Call (${ce.tradingSymbol}) Buyer Price: ${ce.bp}`,
+          `Put (${pe.tradingSymbol}) Seller Price: ${pe.sp}`,
+        ].join('\n');
+        this.log(log);
+        state.isFirstPassSatisfied = false;
+      }
     }
 
     // Condition 2 calculation
@@ -115,8 +145,27 @@ export class AppState {
       (future.bp - equity.ltp + pe.bp - Math.max(strike - equity.ltp, 0) + Math.max(equity.ltp - strike, 0) - ce.sp) *
       lotSize;
     if (result2 >= this.entryValueDifference) {
-      this.log(`ENTRY CONDITION 2 satisfied for ${symbol}`);
+      if (!state.isFirstPassSatisfied) {
+        const log = [
+          `First pass entry satisfied for ${symbol}`,
+          `Future (${future.tradingSymbol}) Buyer Price: ${future.bp}`,
+          `Call (${ce.tradingSymbol}) Seller Price: ${ce.sp}`,
+          `Put (${pe.tradingSymbol}) Buyer Price: ${pe.bp}`,
+        ].join('\n');
+        this.log(log);
+        state.isFirstPassSatisfied = true;
+        return;
+      }
+
+      const log = [
+        `Second pass entry satisfied for ${symbol}`,
+        `Future (${future.tradingSymbol}) Buyer Price: ${future.bp}`,
+        `Call (${ce.tradingSymbol}) Seller Price: ${ce.sp}`,
+        `Put (${pe.tradingSymbol}) Buyer Price: ${pe.bp}`,
+      ].join('\n');
+      this.log(log);
       this.checkForEntry = false;
+      state.isFirstPassSatisfied = false;
       await Promise.all([
         placeOrder('S', future.bp, lotSize, future.tradingSymbol).then((message) => this.log(message)),
         placeOrder('S', pe.bp, lotSize, pe.tradingSymbol).then((message) => this.log(message)),
@@ -162,6 +211,17 @@ export class AppState {
       this.enteredTokens.add(pe.token);
       this.enteredTokens.add(ce.token);
       this.enteredStockState[symbol] = orderState;
+    } else {
+      if (state.isFirstPassSatisfied) {
+        const log = [
+          `Second pass entry not satisfied for ${symbol}`,
+          `Future (${future.tradingSymbol}) Buyer Price: ${future.bp}`,
+          `Call (${ce.tradingSymbol}) Seller Price: ${ce.sp}`,
+          `Put (${pe.tradingSymbol}) Buyer Price: ${pe.bp}`,
+        ].join('\n');
+        this.log(log);
+        state.isFirstPassSatisfied = false;
+      }
     }
   }
 
@@ -285,6 +345,7 @@ export class AppState {
           bp: 0,
           sp: 0,
         },
+        isFirstPassSatisfied: false,
       };
       this.stockState[equity.token] = state;
       this.stockState[equity.symbol] = state;
@@ -463,30 +524,30 @@ export class AppState {
           updated = true;
         }
       } else if (messageData.tk === state.future.token) {
-        if (messageData.bp2) {
-          state.future.bp = Number(messageData.bp2);
+        if (messageData.bp3) {
+          state.future.bp = Number(messageData.bp3);
           updated = true;
         }
-        if (messageData.sp2) {
-          state.future.sp = Number(messageData.sp2);
+        if (messageData.sp3) {
+          state.future.sp = Number(messageData.sp3);
           updated = true;
         }
       } else if (messageData.tk === state.pe.token) {
-        if (messageData.bp2) {
-          state.pe.bp = Number(messageData.bp2);
+        if (messageData.bp3) {
+          state.pe.bp = Number(messageData.bp3);
           updated = true;
         }
-        if (messageData.sp2) {
-          state.pe.sp = Number(messageData.sp2);
+        if (messageData.sp3) {
+          state.pe.sp = Number(messageData.sp3);
           updated = true;
         }
       } else if (messageData.tk === state.ce.token) {
-        if (messageData.bp2) {
-          state.ce.bp = Number(messageData.bp2);
+        if (messageData.bp3) {
+          state.ce.bp = Number(messageData.bp3);
           updated = true;
         }
-        if (messageData.sp2) {
-          state.ce.sp = Number(messageData.sp2);
+        if (messageData.sp3) {
+          state.ce.sp = Number(messageData.sp3);
           updated = true;
         }
       }

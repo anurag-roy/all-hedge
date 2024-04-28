@@ -20,6 +20,7 @@ export type StockState = {
   strike: number;
   pe: OptionState;
   ce: OptionState;
+  isFirstPassSatisfied: boolean;
 };
 
 export type EnteredOptionState = {
