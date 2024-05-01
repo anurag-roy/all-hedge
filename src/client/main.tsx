@@ -6,18 +6,12 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 import { ThemeProvider } from '@client/components/theme-provider';
 import { Toaster } from '@client/components/ui/toaster';
-import Login from '@client/routes/login';
-import Root, { loader as rootLoader } from '@client/routes/root';
+import Root from '@client/routes/root';
 
 const router = createBrowserRouter([
   {
     path: '/',
     element: <Root />,
-    loader: rootLoader,
-  },
-  {
-    path: '/login',
-    element: <Login />,
   },
 ]);
 

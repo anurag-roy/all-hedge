@@ -22,6 +22,49 @@ export type ShoonyaInstrument = {
   tickSize: string;
 };
 
+export type LoginResponse = {
+  /**
+   * Login Success Or failure status
+   */
+  stat: 'OK';
+  /**
+   * It will be present only on login success. tdis data to be sent in subsequent requests in jKey field and web socket connection while connecting.
+   */
+  susertoken: string;
+  /**
+   * It will be present only on login success.
+   */
+  lastaccesstime: string;
+  /**
+   * If Y Mandatory password reset to be enforced. Otherwise the field will be absent.
+   */
+  spasswordreset?: 'Y';
+  /**
+   * Json array of strings with enabled exchange names
+   */
+  exarr: string;
+  /**
+   * User name
+   */
+  uname: string;
+  /**
+   * Json array of Product Obj with enabled products, as defined below.
+   */
+  prarr: string;
+  /**
+   * Account id
+   */
+  actid: string;
+  /**
+   * Email Id
+   */
+  email: string;
+  /**
+   * Broker id
+   */
+  brkname: string;
+};
+
 export type UserDetails = {
   /**
    * User details success or failure indication.

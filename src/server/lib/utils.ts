@@ -1,31 +1,9 @@
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
 import { setInterval } from 'node:timers/promises';
-import { getUserDetails } from './getUserDetails.js';
 
 export const getKeys = <T extends Object>(object: T) => Object.keys(object) as Array<keyof T>;
 
 export const getHash = (input: string) => createHash('sha256').update(input).digest('hex');
-
-export const injectTokenIntoEnv = async (token?: string) => {
-  if (token) {
-    process.env.token = token;
-  } else {
-    try {
-      const readToken = readFileSync('.data/token.txt', 'utf-8');
-      process.env.token = readToken;
-
-      try {
-        await getUserDetails();
-      } catch (error) {
-        console.log('Token expired');
-        delete process.env.token;
-      }
-    } catch (error) {
-      console.log('Token file not found. Skipping token setting...');
-    }
-  }
-};
 
 function* chunkedArgs<A>(args: A[], size: number) {
   for (let i = 0; i < args.length; i += size) {

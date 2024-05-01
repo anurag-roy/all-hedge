@@ -1,18 +1,7 @@
 import { Header } from '@client/components/header';
 import { Logs } from '@client/components/logs';
 import { SubscriptionForm } from '@client/components/subscription-form';
-import { api } from '@client/lib/api';
 import * as React from 'react';
-import { redirect } from 'react-router-dom';
-
-export async function loader() {
-  try {
-    await api('loginStatus').json();
-  } catch (error) {
-    return redirect('/login');
-  }
-  return null;
-}
 
 export default function Root() {
   const [ws, setWs] = React.useState<WebSocket | null>(null);
