@@ -56,9 +56,10 @@ export class AppState {
     }
 
     // Condition 1 calculation
-    state.hedgePrice1 =
+    const hedgePrice1 =
       (equity.ltp - future.sp + Math.max(strike - equity.ltp, 0) - pe.sp + ce.bp - Math.max(equity.ltp - strike, 0)) *
       lotSize;
+    state.hedgePrice1 = Number(hedgePrice1.toFixed(2));
     if (state.hedgePrice1 >= this.entryValueDifference) {
       if (!state.isFirstPassSatisfied) {
         const log = [
@@ -140,9 +141,10 @@ export class AppState {
     }
 
     // Condition 2 calculation
-    state.hedgePrice2 =
+    const hedgePrice2 =
       (future.bp - equity.ltp + pe.bp - Math.max(strike - equity.ltp, 0) + Math.max(equity.ltp - strike, 0) - ce.sp) *
       lotSize;
+    state.hedgePrice2 = Number(hedgePrice2.toFixed(2));
     if (state.hedgePrice2 >= this.entryValueDifference) {
       if (!state.isFirstPassSatisfied) {
         const log = [
@@ -564,7 +566,7 @@ export class AppState {
   destroyState() {
     tickerService.ticker.send(
       JSON.stringify({
-        t: 'u',
+        t: 'ud',
         k: Object.values(this.stockState)
           .flatMap((state) => [
             `NSE|${state.equity.token}`,
