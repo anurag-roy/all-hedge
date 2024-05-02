@@ -1,3 +1,4 @@
+import logger from '@server/services/logger.js';
 import { AppState } from '@server/state.js';
 import type { AppStateProps } from '@shared/types/state.js';
 import type { IncomingMessage } from 'node:http';
@@ -31,7 +32,7 @@ export default function (ws: WebSocket, req: IncomingMessage) {
       client: ws,
     };
   } catch (error) {
-    console.log('Bad request for wss connection:', error);
+    logger.error('Bad request for wss connection:', error);
     ws.close(400, (error as Error).message);
     return;
   }
@@ -39,9 +40,9 @@ export default function (ws: WebSocket, req: IncomingMessage) {
   const appState = new AppState(appStateProps);
   ws.send(JSON.stringify({ type: 'ack', message: 'Connected' }));
 
-  appState.setupState().catch((error) => console.error);
+  appState.setupState().catch((error) => logger.error('Error setting up state:', error));
   ws.on('close', () => {
-    console.log('Client disconnected');
+    logger.info('Client disconnected');
     appState.destroyState();
   });
 }

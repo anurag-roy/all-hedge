@@ -21,6 +21,8 @@ export type StockState = {
   pe: OptionState;
   ce: OptionState;
   isFirstPassSatisfied: boolean;
+  hedgePrice1: number;
+  hedgePrice2: number;
 };
 
 export type EnteredOptionState = {

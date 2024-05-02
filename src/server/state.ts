@@ -56,10 +56,10 @@ export class AppState {
     }
 
     // Condition 1 calculation
-    const result1 =
+    state.hedgePrice1 =
       (equity.ltp - future.sp + Math.max(strike - equity.ltp, 0) - pe.sp + ce.bp - Math.max(equity.ltp - strike, 0)) *
       lotSize;
-    if (result1 >= this.entryValueDifference) {
+    if (state.hedgePrice1 >= this.entryValueDifference) {
       if (!state.isFirstPassSatisfied) {
         const log = [
           `First pass entry satisfied for ${symbol}`,
@@ -140,10 +140,10 @@ export class AppState {
     }
 
     // Condition 2 calculation
-    const result2 =
+    state.hedgePrice2 =
       (future.bp - equity.ltp + pe.bp - Math.max(strike - equity.ltp, 0) + Math.max(equity.ltp - strike, 0) - ce.sp) *
       lotSize;
-    if (result2 >= this.entryValueDifference) {
+    if (state.hedgePrice2 >= this.entryValueDifference) {
       if (!state.isFirstPassSatisfied) {
         const log = [
           `First pass entry satisfied for ${symbol}`,
@@ -317,6 +317,8 @@ export class AppState {
           sp: 0,
         },
         isFirstPassSatisfied: false,
+        hedgePrice1: 0,
+        hedgePrice2: 0,
       };
       this.stockState[equity.token] = state;
       this.stockState[equity.symbol] = state;
@@ -409,7 +411,7 @@ export class AppState {
     const futures = allfutures.filter((future, index) => {
       const marginResponse = margins[index];
       if (marginResponse.status === 'rejected') {
-        console.error('Error fetching margin for', future.symbol, marginResponse.reason);
+        logger.error(`Error fetching margin for ${future.symbol}`, marginResponse.reason);
         return false;
       }
       // if (marginResponse.value.remarks === 'Insufficient Balance') {
@@ -465,6 +467,13 @@ export class AppState {
         nfoTokens.push(`NFO|${option.token}`);
       }
     }
+
+    this.client.send(
+      JSON.stringify({
+        type: 'stockStateInit',
+        data: _.uniqBy(Object.values(this.stockState), (s) => s.symbol),
+      })
+    );
 
     // Re-add ticker message handler
     tickerService.ticker.onmessage = async (messageEvent: MessageEvent) => {
@@ -531,6 +540,12 @@ export class AppState {
           }
         } else if (this.checkForEntry) {
           await this.checkEntryCondition(state);
+          this.client.send(
+            JSON.stringify({
+              type: 'stockStateUpdate',
+              data: state,
+            })
+          );
         }
       }
     };
