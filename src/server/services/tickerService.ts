@@ -1,9 +1,11 @@
 import env from '@shared/config/env.json';
+import { TickerSubscription } from '@shared/types/socket.js';
 import { WebSocket, type MessageEvent } from 'ws';
 import { GlobalRef } from './GlobalRef.js';
 
 class TickerService {
   ticker!: WebSocket;
+  subscriptions: TickerSubscription[] = [];
 
   async connectTicker(token: string) {
     this.ticker = await new Promise((resolve, reject) => {
@@ -33,6 +35,15 @@ class TickerService {
         }
       };
     });
+  }
+
+  async init() {
+    this.ticker.onmessage = (messageEvent: MessageEvent) => {
+      const messageData = JSON.parse(messageEvent.data as string);
+      if (messageData.t === 't' || messageData.t === 'd') {
+        this.subscriptions.forEach((subscription) => subscription(messageData));
+      }
+    };
   }
 }
 

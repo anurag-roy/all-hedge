@@ -109,7 +109,7 @@ export default {
     'JSWSTEEL',
     'JUBLFOOD',
     'KOTAKBANK',
-    'L&TFH',
+    // 'L&TFH',
     'LALPATHLAB',
     'LAURUSLABS',
     'LICHSGFIN',
