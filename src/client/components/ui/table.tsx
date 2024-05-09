@@ -4,7 +4,7 @@ import { cn } from '@client/lib/utils';
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
-    <div className='w-full overflow-auto'>
+    <div className='w-full'>
       <table ref={ref} className={cn('w-full caption-bottom text-sm', className)} {...props} />
     </div>
   )
@@ -12,13 +12,15 @@ const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableE
 Table.displayName = 'Table';
 
 const TableHeader = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
-  ({ className, ...props }, ref) => <thead ref={ref} className={cn('[&_tr]:border-b', className)} {...props} />
+  ({ className, ...props }, ref) => (
+    <thead ref={ref} className={cn('sticky top-0 bg-background [&_tr]:border-b', className)} {...props} />
+  )
 );
 TableHeader.displayName = 'TableHeader';
 
 const TableBody = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
   ({ className, ...props }, ref) => (
-    <tbody ref={ref} className={cn('[&_tr:last-child]:border-0', className)} {...props} />
+    <tbody ref={ref} className={cn('overflow-y-auto [&_tr:last-child]:border-0', className)} {...props} />
   )
 );
 TableBody.displayName = 'TableBody';

@@ -8,12 +8,13 @@ import dbService from './dbService.js';
 import logger from './logger.js';
 import tickerService from './tickerService.js';
 
-class StockService {
-  excludedStocks: ExcludedStock[] = [];
+class ExcludedStocksService {
+  private excludedStocks: ExcludedStock[] = [];
 
   async init() {
     const nseBannedStocks = await getBannedStocks();
     nseBannedStocks.forEach((symbol) => this.excludedStocks.push({ symbol, reason: ExclusionReason.NSE_BAN }));
+    logger.info(`NSE bans found for ${nseBannedStocks.length} stocks`);
 
     const customBans = await dbService.db.bannedStocks.findMany();
     customBans.forEach((stock) => {
@@ -21,6 +22,7 @@ class StockService {
         this.excludedStocks.push({ symbol: stock.symbol, reason: ExclusionReason.CUSTOM_BAN });
       }
     });
+    logger.info(`Custom bans found for ${customBans.length} stocks`);
 
     const equities = await dbService.getEquities();
     const filteredEquities = equities.filter(
@@ -28,6 +30,7 @@ class StockService {
     );
     const eqTokens = filteredEquities.map((equity) => equity.token);
 
+    logger.info(`Checking LTP for ${filteredEquities.length} stocks...`);
     const ltpBelowThresholdTokens: string[] = [];
     await new Promise<void>((resolve, reject) => {
       let responseReceived = 0;
@@ -45,7 +48,7 @@ class StockService {
           }
 
           // Resolve once all responses are received
-          if (responseReceived === equities.length) {
+          if (responseReceived === filteredEquities.length) {
             tickerService.ticker.onmessage = null;
             tickerService.ticker.onerror = null;
             resolve();
@@ -79,13 +82,42 @@ class StockService {
           k: ltpBelowThresholdTokens.map((t) => `NSE|${t}`).join('#'),
         })
       );
+    } else {
+      logger.info('No stocks with LTP below threshold.');
     }
+
+    this.excludedStocks.sort((a, b) => a.symbol.localeCompare(b.symbol));
+  }
+
+  getExcludedStocks() {
+    return this.excludedStocks;
+  }
+
+  async addExcludedStock(symbol: string, reason: ExclusionReason) {
+    if (reason === ExclusionReason.CUSTOM_BAN) {
+      await dbService.db.bannedStocks.create({ data: { symbol } });
+    }
+    this.excludedStocks.push({ symbol, reason });
+    this.excludedStocks.sort((a, b) => a.symbol.localeCompare(b.symbol));
+    return this.excludedStocks;
+  }
+
+  async removeExcludedStock(symbol: string) {
+    const foundStockIndex = this.excludedStocks.findIndex((excludedStock) => excludedStock.symbol === symbol);
+    if (foundStockIndex !== -1) {
+      const foundStock = this.excludedStocks[foundStockIndex];
+      this.excludedStocks.splice(foundStockIndex, 1);
+      if (foundStock.reason === ExclusionReason.CUSTOM_BAN) {
+        await dbService.db.bannedStocks.delete({ where: { symbol } });
+      }
+    }
+    return this.excludedStocks;
   }
 }
 
-const stockServiceRef = new GlobalRef<StockService>('myapp.stockService');
-if (!stockServiceRef.value) {
-  stockServiceRef.value = new StockService();
+const excludedStocksServiceRef = new GlobalRef<ExcludedStocksService>('myapp.excludedStocksService');
+if (!excludedStocksServiceRef.value) {
+  excludedStocksServiceRef.value = new ExcludedStocksService();
 }
 
-export default stockServiceRef.value;
+export default excludedStocksServiceRef.value;

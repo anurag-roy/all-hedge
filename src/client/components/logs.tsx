@@ -14,14 +14,14 @@ export function Logs({ logs }: LogsProps) {
         <CardTitle>Application Logs</CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className='w-full h-96 rounded-md border'>
+        <ScrollArea className='h-96 w-full rounded-md border'>
           {logs.length === 0 ? (
-            <div className='h-96 grid place-items-center text-zinc-500'>No logs available</div>
+            <div className='grid h-96 place-items-center text-zinc-500'>No logs available</div>
           ) : (
             logs.map((log, idx) => (
               <React.Fragment key={log.id}>
                 <div className='flex gap-2 px-2 py-1.5'>
-                  <span className='text-bold text-zinc-500 tabular-nums'>
+                  <span className='text-bold tabular-nums text-zinc-500'>
                     [{new Date(log.timeStamp).toLocaleTimeString()}]
                   </span>
                   <p>{log.message}</p>

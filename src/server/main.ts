@@ -1,14 +1,16 @@
-import userDetailsHandler from '@server/api/userDetails.js';
+import excludedStocksRouter from '@server/api/excludedStocks.js';
+import userDetailsRouter from '@server/api/userDetails.js';
 import wssHandler from '@server/api/wss.js';
+import excludedStocksService from '@server/services/excludedStocksService.js';
 import logger from '@server/services/logger.js';
 import shoonyaService from '@server/services/shoonyaService.js';
+import tickerService from '@server/services/tickerService.js';
 import config from '@shared/config/config.js';
 import env from '@shared/config/env.json';
 import express from 'express';
 import { HTTPError } from 'ky';
 import ViteExpress from 'vite-express';
 import { WebSocketServer } from 'ws';
-import tickerService from './services/tickerService.js';
 
 try {
   await shoonyaService.getUserDetails();
@@ -32,6 +34,7 @@ try {
   }
 }
 
+logger.info('Connecting to ticker...');
 const token = shoonyaService.token;
 let isTickerConnected = false;
 while (!isTickerConnected) {
@@ -44,10 +47,13 @@ while (!isTickerConnected) {
   }
 }
 
+await excludedStocksService.init();
+
 const app = express();
 
 app.use(express.json());
-app.get('/api/userDetails', userDetailsHandler);
+app.use('/api/userDetails', userDetailsRouter);
+app.use('/api/excludedStocks', excludedStocksRouter);
 
 const server = app.listen(config.PORT, () => logger.info(`Server started on http://localhost:${config.PORT}`));
 

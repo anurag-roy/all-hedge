@@ -86,7 +86,7 @@ export function SubscriptionForm({ setWs }: SubscriptionFormProps) {
         <SelectFormField form={form} name='expiry' options={expiryOptions} />
         <NumberInputFormField form={form} name='lotSize' min={0} step={1} />
         <NumberInputFormField form={form} name='exitValueDifference' min={0} step={100} />
-        <Button type='submit' className='mt-[30px] ml-auto' disabled={buttonState !== 'subscribe'}>
+        <Button type='submit' className='ml-auto mt-[30px]' disabled={buttonState !== 'subscribe'}>
           {buttonState === 'subscribe' ? 'Subscribe' : null}
           {buttonState === 'subscribing' ? (
             <>

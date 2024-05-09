@@ -1,3 +1,4 @@
+import { ExcludedStocks } from '@client/components/excluded-stocks';
 import { Header } from '@client/components/header';
 import { Logs } from '@client/components/logs';
 import { StockStates } from '@client/components/stock-states';
@@ -35,6 +36,9 @@ export default function Root() {
     <>
       <Header />
       <main className='container'>
+        <div className='grid grid-cols-[30%,_50%,_20%] gap-4'>
+          <ExcludedStocks />
+        </div>
         <section>
           <SubscriptionForm setWs={setWs} />
           <Logs logs={logs} />
