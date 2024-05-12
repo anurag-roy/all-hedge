@@ -1,3 +1,7 @@
+import { ArrowTopRightIcon } from '@radix-ui/react-icons';
+import * as React from 'react';
+import { Link } from 'react-router-dom';
+
 import { Avatar, AvatarFallback } from '@client/components/ui/avatar';
 import { Button } from '@client/components/ui/button';
 import {
@@ -10,10 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@client/components/ui/dropdown-menu';
 import { api } from '@client/lib/api';
-import { ArrowTopRightIcon } from '@radix-ui/react-icons';
 import type { UserDetails } from '@shared/types/shoonya';
-import * as React from 'react';
-import { Link } from 'react-router-dom';
 
 export function UserNav() {
   const [userDetails, setUserDetails] = React.useState<UserDetails | null>(null);

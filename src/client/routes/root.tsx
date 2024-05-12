@@ -1,10 +1,12 @@
+import * as React from 'react';
+
 import { ExcludedStocks } from '@client/components/excluded-stocks';
 import { Header } from '@client/components/header';
+import { Limits } from '@client/components/limits';
 import { Logs } from '@client/components/logs';
 import { StockStates } from '@client/components/stock-states';
 import { SubscriptionForm } from '@client/components/subscription-form';
 import type { StockState } from '@shared/types/state';
-import * as React from 'react';
 
 export default function Root() {
   const [ws, setWs] = React.useState<WebSocket | null>(null);
@@ -38,6 +40,8 @@ export default function Root() {
       <main className='container'>
         <div className='grid grid-cols-[30%,_50%,_20%] gap-4'>
           <ExcludedStocks />
+          <div></div>
+          <Limits />
         </div>
         <section>
           <SubscriptionForm setWs={setWs} />

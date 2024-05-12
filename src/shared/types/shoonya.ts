@@ -133,6 +133,443 @@ export type UserDetails = {
   request_time: string;
 };
 
+export type Limits = {
+  /**
+   * Limits request success or failure indication.
+   */
+  stat: 'Ok';
+  /**
+   * Account id
+   */
+  actid: string;
+  /**
+   * Product name
+   */
+  prd: string;
+  /**
+   * Segment
+   */
+  seg: 'CM' | 'FO' | 'FX';
+  /**
+   * Exchange
+   */
+  exch: string;
+
+  // ------Cash Primary Fields-------
+  /**
+   * Cash Margin available
+   */
+  cash: string;
+  /**
+   * Total Amount transferred using Payins today
+   */
+  payin: string;
+  /**
+   * Total amount requested for withdrawal today
+   */
+  payout: string;
+
+  // ---Cash Additional Fields-----
+  /**
+   * Prevalued Collateral Amount
+   */
+  brkcollamt: string;
+  /**
+   * Uncleared Cash (Payin through cheques)
+   */
+  unclearedcash: string;
+  /**
+   * Additional leverage amount / Amount added to handle system errors - by broker.
+   */
+  daycash: string;
+
+  // ----Margin Utilized-----
+  /**
+   * Total margin / fund used today
+   */
+  marginused: string;
+  /**
+   * Mtom current percentage
+   */
+  mtomcurper: string;
+
+  // ----Margin Used components----
+  /**
+   * CAC Buy used
+   */
+  cbu: string;
+  /**
+   * CAC Sell Credits
+   */
+  csc: string;
+  /**
+   * Current realized PNL
+   */
+  rpnl: string;
+  /**
+   * Current unrealized mtom
+   */
+  unmtom: string;
+  /**
+   * Covered Product margins
+   */
+  marprt: string;
+  /**
+   * Span used
+   */
+  span: string;
+  /**
+   * Exposure margin
+   */
+  expo: string;
+  /**
+   * Premium used
+   */
+  premium: string;
+  /**
+   * Var Elm Margin
+   */
+  varelm: string;
+  /**
+   * Gross Exposure
+   */
+  grexpo: string;
+  /**
+   * Gross Exposure derivative
+   */
+  greexpo_d: string;
+  /**
+   * Scrip basket margin
+   */
+  scripbskmar: string;
+  /**
+   * Additional scrip basket margin
+   */
+  addscripbskmrg: string;
+  /**
+   * Brokerage amount
+   */
+  brokerage: string;
+  /**
+   * Collateral calculated based on uploaded holdings
+   */
+  collateral: string;
+  /**
+   * Valuation of uploaded holding pre haircut
+   */
+  grcoll: string;
+  turnoverlmt: string;
+  pendordvallmt: string;
+
+  // -------Additional Risk Indicators------
+  /**
+   * Turnover
+   */
+  turnover: string;
+  /**
+   * Pending Order value
+   */
+  pendordval: string;
+  // ------Margin used detailed breakup fields----
+  /**
+   * Current realized PNL (Equity Intraday)
+   */
+  rzpnl_e_i: string;
+  /**
+   * Current realized PNL (Equity Margin)
+   */
+  rzpnl_e_m: string;
+  /**
+   * Current realized PNL (Equity Cash n Carry)
+   */
+  rzpnl_e_c: string;
+  /**
+   * Current realized PNL (Derivative Intraday)
+   */
+  rzpnl_d_i: string;
+  /**
+   * Current realized PNL (Derivative Margin)
+   */
+  rzpnl_d_m: string;
+  /**
+   * Current realized PNL (FX Intraday)
+   */
+  rzpnl_f_i: string;
+  /**
+   * Current realized PNL (FX Margin)
+   */
+  rzpnl_f_m: string;
+  /**
+   * Current realized PNL (Commodity Intraday)
+   */
+  rzpnl_c_i: string;
+  /**
+   * Current realized PNL (Commodity Margin)
+   */
+  rzpnl_c_m: string;
+  /**
+   * Current unrealized MTOM (Equity Intraday)
+   */
+  uzpnl_e_i: string;
+  /**
+   * Current unrealized MTOM (Equity Margin)
+   */
+  uzpnl_e_m: string;
+  /**
+   * Current unrealized MTOM (Equity Cash n Carry)
+   */
+  uzpnl_e_c: string;
+  /**
+   * Current unrealized MTOM (Derivative Intraday)
+   */
+  uzpnl_d_i: string;
+  /**
+   * Current unrealized MTOM (Derivative Margin)
+   */
+  uzpnl_d_m: string;
+  /**
+   * Current unrealized MTOM (FX Intraday)
+   */
+  uzpnl_f_i: string;
+  /**
+   * Current unrealized MTOM (FX Margin)
+   */
+  uzpnl_f_m: string;
+  /**
+   * Current unrealized MTOM (Commodity Intraday)
+   */
+  uzpnl_c_i: string;
+  /**
+   * Current unrealized MTOM (Commodity Margin)
+   */
+  uzpnl_c_m: string;
+  /**
+   * Span Margin (Derivative Intraday)
+   */
+  span_d_i: string;
+  /**
+   * Span Margin (Derivative Margin)
+   */
+  span_d_m: string;
+  /**
+   * Span Margin (FX Intraday)
+   */
+  span_f_i: string;
+  /**
+   * Span Margin (FX Margin)
+   */
+  span_f_m: string;
+  /**
+   * Span Margin (Commodity Intraday)
+   */
+  span_c_i: string;
+  /**
+   * Span Margin (Commodity Margin)
+   */
+  span_c_m: string;
+  /**
+   * Exposure Margin (Derivative Intraday)
+   */
+  expo_d_i: string;
+  /**
+   * Exposure Margin (Derivative Margin)
+   */
+  expo_d_m: string;
+  /**
+   * Exposure Margin (FX Intraday)
+   */
+  expo_f_i: string;
+  /**
+   * Exposure Margin (FX Margin)
+   */
+  expo_f_m: string;
+  /**
+   * Exposure Margin (Commodity Intraday)
+   */
+  expo_c_i: string;
+  /**
+   * Exposure Margin (Commodity Margin)
+   */
+  expo_c_m: string;
+  /**
+   * Option premium (Derivative Intraday)
+   */
+  premium_d_i: string;
+  /**
+   * Option premium (Derivative Margin)
+   */
+  premium_d_m: string;
+  /**
+   * Option premium (FX Intraday)
+   */
+  premium_f_i: string;
+  /**
+   * Option premium (FX Margin)
+   */
+  premium_f_m: string;
+  /**
+   * Option premium (Commodity Intraday)
+   */
+  premium_c_i: string;
+  /**
+   * Option premium (Commodity Margin)
+   */
+  premium_c_m: string;
+  /**
+   * Var Elm (Equity Intraday)
+   */
+  varelm_e_i: string;
+  /**
+   * Var Elm (Equity Margin)
+   */
+  varelm_e_m: string;
+  /**
+   * Var Elm (Equity Cash n Carry)
+   */
+  varelm_e_c: string;
+  /**
+   * Covered Product margins (Equity High leverage)
+   */
+  marprt_e_h: string;
+  /**
+   * Covered Product margins (Equity Bracket Order)
+   */
+  marprt_e_b: string;
+  /**
+   * Covered Product margins (Derivative High leverage)
+   */
+  marprt_d_h: string;
+  /**
+   * Covered Product margins (Derivative Bracket Order)
+   */
+  marprt_d_b: string;
+  /**
+   * Covered Product margins (FX High leverage)
+   */
+  marprt_f_h: string;
+  /**
+   * Covered Product margins (FX Bracket Order)
+   */
+  marprt_f_b: string;
+  /**
+   * Covered Product margins (Commodity High leverage)
+   */
+  marprt_c_h: string;
+  /**
+   * Covered Product margins (Commodity Bracket Order)
+   */
+  marprt_c_b: string;
+  /**
+   * Scrip basket margin (Equity Intraday)
+   */
+  scripbskmar_e_i: string;
+  /**
+   * Scrip basket margin (Equity Margin)
+   */
+  scripbskmar_e_m: string;
+  /**
+   * Scrip basket margin (Equity Cash n Carry)
+   */
+  scripbskmar_e_c: string;
+  /**
+   * Additional scrip basket margin (Derivative Intraday)
+   */
+  addscripbskmrg_d_i: string;
+  /**
+   * Additional scrip basket margin (Derivative Margin)
+   */
+  addscripbskmrg_d_m: string;
+  /**
+   * Additional scrip basket margin (FX Intraday)
+   */
+  addscripbskmrg_f_i: string;
+  /**
+   * Additional scrip basket margin (FX Margin)
+   */
+  addscripbskmrg_f_m: string;
+  /**
+   * Additional scrip basket margin (Commodity Intraday)
+   */
+  addscripbskmrg_c_i: string;
+  /**
+   * Additional scrip basket margin (Commodity Margin)
+   */
+  addscripbskmrg_: string;
+  c_m: string;
+  /**
+   * Brokerage (Equity Intraday)
+   */
+  brkage_e_i: string;
+  /**
+   * Brokerage (Equity Margin)
+   */
+  brkage_e_m: string;
+  /**
+   * Brokerage (Equity CAC)
+   */
+  brkage_e_c: string;
+  /**
+   * Brokerage (Equity High Leverage)
+   */
+  brkage_e_h: string;
+  /**
+   * Brokerage (Equity Bracket Order)
+   */
+  brkage_e_b: string;
+  /**
+   * Brokerage (Derivative Intraday)
+   */
+  brkage_d_i: string;
+  /**
+   * Brokerage (Derivative Margin)
+   */
+  brkage_d_m: string;
+  /**
+   * Brokerage (Derivative High Leverage)
+   */
+  brkage_d_h: string;
+  /**
+   * Brokerage (Derivative Bracket Order)
+   */
+  brkage_d_b: string;
+  /**
+   * Brokerage (FX Intraday)
+   */
+  brkage_f_i: string;
+  /**
+   * Brokerage (FX Margin)
+   */
+  brkage_f_m: string;
+  /**
+   * Brokerage (FX High Leverage)
+   */
+  brkage_f_h: string;
+  /**
+   * Brokerage (FX Bracket Order)
+   */
+  brkage_f_b: string;
+  /**
+   * Brokerage (Commodity Intraday)
+   */
+  brkage_c_i: string;
+  /**
+   * Brokerage (Commodity Margin)
+   */
+  brkage_c_m: string;
+  /**
+   * Brokerage (Commodity High Leverage)
+   */
+  brkage_c_h: string;
+  /**
+   * Brokerage (Commodity Bracket Order)
+   */
+  brkage_c_b: string;
+  /**
+   * Peak margin used by the client
+   */
+  peak_mar: string;
+};
+
 export type Margin = {
   /**
    * Response received time.

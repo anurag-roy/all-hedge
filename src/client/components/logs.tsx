@@ -1,7 +1,8 @@
+import * as React from 'react';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@client/components/ui/card';
 import { ScrollArea } from '@client/components/ui/scroll-area';
 import { Separator } from '@client/components/ui/separator';
-import * as React from 'react';
 
 type LogsProps = {
   logs: { id: number; timeStamp: number; message: string }[];

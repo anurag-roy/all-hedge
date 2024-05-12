@@ -1,3 +1,9 @@
+import { CheckIcon, LockClosedIcon, Pencil1Icon } from '@radix-ui/react-icons';
+import { HTTPError } from 'ky';
+import * as _ from 'lodash-es';
+import * as React from 'react';
+import { toast } from 'sonner';
+
 import { Badge } from '@client/components/ui/badge';
 import { Button } from '@client/components/ui/button';
 import {
@@ -12,11 +18,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@client/components/ui/p
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@client/components/ui/table';
 import { api } from '@client/lib/api';
 import { cn } from '@client/lib/utils';
-import { CheckIcon, LockClosedIcon, Pencil1Icon } from '@radix-ui/react-icons';
 import config from '@shared/config/config';
 import { ExcludedStock, ExclusionReason } from '@shared/types/stock';
-import * as _ from 'lodash-es';
-import * as React from 'react';
 
 const reasonToVariantMap = {
   [ExclusionReason.NSE_BAN]: 'orange',
@@ -64,21 +67,29 @@ export function ExcludedStocks() {
   const excludedStockMap = _.keyBy(excludedStocks, (s) => s.symbol);
 
   React.useEffect(() => {
-    api('excludedStocks').json<ExcludedStock[]>().then(setExcludedStocks);
+    api('excludedStocks')
+      .json<ExcludedStock[]>()
+      .then(setExcludedStocks)
+      .catch((error) => {
+        const errorMessage = (error as HTTPError).message;
+        toast.error('Failed to fetch excluded stocks', {
+          description: errorMessage,
+        });
+      });
   }, []);
 
-  const toggleBannedStock = (symbol: string) => {
-    const excludedStock = excludedStockMap[symbol];
-    if (excludedStock) {
-      api
-        .delete(`excludedStocks/${encodeURIComponent(symbol)}`)
-        .json<ExcludedStock[]>()
-        .then(setExcludedStocks);
-    } else {
-      api
-        .post('excludedStocks', { json: { symbol, reason: ExclusionReason.CUSTOM_BAN } })
-        .json<ExcludedStock[]>()
-        .then(setExcludedStocks);
+  const toggleBannedStock = async (symbol: string) => {
+    const apiPromise = excludedStockMap[symbol]
+      ? api.delete(`excludedStocks/${encodeURIComponent(symbol)}`)
+      : api.post('excludedStocks', { json: { symbol, reason: ExclusionReason.CUSTOM_BAN } });
+    try {
+      const res = await apiPromise.json<ExcludedStock[]>();
+      setExcludedStocks(res);
+    } catch (error) {
+      const errorMessage = (error as HTTPError).message;
+      toast.error('Failed to update excluded stocks', {
+        description: errorMessage,
+      });
     }
   };
 
@@ -88,9 +99,8 @@ export function ExcludedStocks() {
         <h2 className='ml-1 text-xl font-semibold'>Excluded stocks</h2>
         <Popover>
           <PopoverTrigger asChild>
-            <Button size='sm' variant='ghost' className='h-8'>
-              <Pencil1Icon className='mr-1 h-4 w-4' />
-              Edit
+            <Button variant='outline' size='icon-sm'>
+              <Pencil1Icon className='h-4 w-4' />
             </Button>
           </PopoverTrigger>
           <PopoverContent className='w-[250px] p-0' align='center'>

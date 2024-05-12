@@ -1,6 +1,6 @@
 import { getHash } from '@server/lib/utils.js';
 import env from '@shared/config/env.json';
-import type { LoginResponse, Margin, Quote, UserDetails } from '@shared/types/shoonya.js';
+import type { Limits, LoginResponse, Margin, Quote, UserDetails } from '@shared/types/shoonya.js';
 import ky from 'ky';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { TOTP } from 'totp-generator';
@@ -14,10 +14,14 @@ class ShoonyaService {
         async (error) => {
           const { response } = error;
           if (response && response.body) {
-            const json = await response.json();
-            if (json.stat === 'Not_Ok') {
-              error.name = 'ShoonyaError';
-              error.message = json.emsg;
+            try {
+              const json = await response.json();
+              if (json.stat === 'Not_Ok') {
+                error.name = 'ShoonyaError';
+                error.message = json.emsg;
+              }
+            } catch (err) {
+              return error;
             }
           }
           return error;
@@ -69,6 +73,14 @@ class ShoonyaService {
       .json<UserDetails>();
   }
 
+  async getLimits() {
+    return this.api
+      .post('Limits', {
+        body: this.getBody(),
+      })
+      .json<Limits>();
+  }
+
   async getQuotes(exchange: 'NSE' | 'NFO', instrumentToken: string) {
     return this.api
       .post('GetQuotes', {
@@ -113,7 +125,7 @@ class ShoonyaService {
       .json<any>();
   }
 
-  getBody(data: Record<string, string>) {
+  getBody(data: Record<string, string> = {}) {
     return (
       'jData=' +
       JSON.stringify({

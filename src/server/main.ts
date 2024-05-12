@@ -1,4 +1,5 @@
 import excludedStocksRouter from '@server/api/excludedStocks.js';
+import limitsRouter from '@server/api/limits.js';
 import userDetailsRouter from '@server/api/userDetails.js';
 import wssHandler from '@server/api/wss.js';
 import excludedStocksService from '@server/services/excludedStocksService.js';
@@ -54,6 +55,7 @@ const app = express();
 app.use(express.json());
 app.use('/api/userDetails', userDetailsRouter);
 app.use('/api/excludedStocks', excludedStocksRouter);
+app.use('/api/limits', limitsRouter);
 
 const server = app.listen(config.PORT, () => logger.info(`Server started on http://localhost:${config.PORT}`));
 
