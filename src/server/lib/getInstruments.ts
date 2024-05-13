@@ -12,7 +12,7 @@ export const getInstruments = async (forExchange: 'NSE' | 'NFO') => {
   const result = await jsZip.loadAsync(arrayBuffer);
   const file = result.file(txtFileName);
   if (!file) {
-    ('Did not find the expected .txt file. Exiting...');
+    console.log('Did not find the expected .txt file. Exiting...');
     process.exit(1);
   }
 

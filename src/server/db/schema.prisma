@@ -20,3 +20,7 @@ model instrument {
   strikePrice   Float
   tickSize      String
 }
+
+model bannedStocks {
+  symbol String @id
+}

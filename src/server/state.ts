@@ -1,15 +1,15 @@
-import { getEquities, getFutures, getInstrumentsForSymbol } from '@server/db/db.js';
 import { getBannedStocks } from '@server/lib/getBannedStocks.js';
-import { getMargin } from '@server/lib/getMargin.js';
-import { placeOrder } from '@server/lib/placeOrder.js';
 import { throttle } from '@server/lib/utils.js';
+import dbService from '@server/services/dbService.js';
+import logger from '@server/services/logger.js';
+import tickerService from '@server/services/tickerService.js';
 import config from '@shared/config/config.js';
-import env from '@shared/config/env.json';
 import type { DepthResponse, TouchlineResponse } from '@shared/types/shoonya.js';
 import type { AppStateProps, EnteredState, StockState } from '@shared/types/state.js';
 import * as _ from 'lodash-es';
 import { readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { WebSocket, type MessageEvent } from 'ws';
+import shoonyaService from './services/shoonyaService.js';
 
 export class AppState {
   expiry: string;
@@ -19,7 +19,6 @@ export class AppState {
   client: WebSocket;
   logId = 0;
 
-  ticker: WebSocket | undefined;
   stockState: Record<string, StockState> = {};
   enteredStockState = this.getExistingEntries();
   enteredTokens = new Set(
@@ -57,16 +56,36 @@ export class AppState {
     }
 
     // Condition 1 calculation
-    const result1 =
+    const hedgePrice1 =
       (equity.ltp - future.sp + Math.max(strike - equity.ltp, 0) - pe.sp + ce.bp - Math.max(equity.ltp - strike, 0)) *
       lotSize;
-    if (result1 >= this.entryValueDifference) {
-      this.log(`ENTRY CONDITION 1 satisfied for ${symbol}`);
+    state.hedgePrice1 = Number(hedgePrice1.toFixed(2));
+    if (state.hedgePrice1 >= this.entryValueDifference) {
+      if (!state.isFirstPassSatisfied) {
+        const log = [
+          `First pass entry satisfied for ${symbol}`,
+          `Future (${future.tradingSymbol}) Seller Price: ${future.sp}`,
+          `Call (${ce.tradingSymbol}) Buyer Price: ${ce.bp}`,
+          `Put (${pe.tradingSymbol}) Seller Price: ${pe.sp}`,
+        ].join('\n');
+        this.log(log);
+        state.isFirstPassSatisfied = true;
+        return;
+      }
+
+      const log = [
+        `Second pass entry satisfied for ${symbol}`,
+        `Future (${future.tradingSymbol}) Seller Price: ${future.sp}`,
+        `Call (${ce.tradingSymbol}) Buyer Price: ${ce.bp}`,
+        `Put (${pe.tradingSymbol}) Seller Price: ${pe.sp}`,
+      ].join('\n');
+      this.log(log);
       this.checkForEntry = false;
+      state.isFirstPassSatisfied = false;
       await Promise.all([
-        placeOrder('B', future.sp, lotSize, future.tradingSymbol).then((message) => this.log(message)),
-        placeOrder('B', pe.sp, lotSize, pe.tradingSymbol).then((message) => this.log(message)),
-        placeOrder('S', ce.bp, lotSize, ce.tradingSymbol).then((message) => this.log(message)),
+        shoonyaService.placeOrder('B', future.sp, lotSize, future.tradingSymbol).then((message) => this.log(message)),
+        shoonyaService.placeOrder('B', pe.sp, lotSize, pe.tradingSymbol).then((message) => this.log(message)),
+        shoonyaService.placeOrder('S', ce.bp, lotSize, ce.tradingSymbol).then((message) => this.log(message)),
       ]);
       // TODO: get this from order response
       const orderState: EnteredState = {
@@ -108,19 +127,50 @@ export class AppState {
       this.enteredTokens.add(pe.token);
       this.enteredTokens.add(ce.token);
       this.enteredStockState[symbol] = orderState;
+    } else {
+      if (state.isFirstPassSatisfied) {
+        const log = [
+          `Second pass entry not satisfied for ${symbol}`,
+          `Future (${future.tradingSymbol}) Seller Price: ${future.sp}`,
+          `Call (${ce.tradingSymbol}) Buyer Price: ${ce.bp}`,
+          `Put (${pe.tradingSymbol}) Seller Price: ${pe.sp}`,
+        ].join('\n');
+        this.log(log);
+        state.isFirstPassSatisfied = false;
+      }
     }
 
     // Condition 2 calculation
-    const result2 =
+    const hedgePrice2 =
       (future.bp - equity.ltp + pe.bp - Math.max(strike - equity.ltp, 0) + Math.max(equity.ltp - strike, 0) - ce.sp) *
       lotSize;
-    if (result2 >= this.entryValueDifference) {
-      this.log(`ENTRY CONDITION 2 satisfied for ${symbol}`);
+    state.hedgePrice2 = Number(hedgePrice2.toFixed(2));
+    if (state.hedgePrice2 >= this.entryValueDifference) {
+      if (!state.isFirstPassSatisfied) {
+        const log = [
+          `First pass entry satisfied for ${symbol}`,
+          `Future (${future.tradingSymbol}) Buyer Price: ${future.bp}`,
+          `Call (${ce.tradingSymbol}) Seller Price: ${ce.sp}`,
+          `Put (${pe.tradingSymbol}) Buyer Price: ${pe.bp}`,
+        ].join('\n');
+        this.log(log);
+        state.isFirstPassSatisfied = true;
+        return;
+      }
+
+      const log = [
+        `Second pass entry satisfied for ${symbol}`,
+        `Future (${future.tradingSymbol}) Buyer Price: ${future.bp}`,
+        `Call (${ce.tradingSymbol}) Seller Price: ${ce.sp}`,
+        `Put (${pe.tradingSymbol}) Buyer Price: ${pe.bp}`,
+      ].join('\n');
+      this.log(log);
       this.checkForEntry = false;
+      state.isFirstPassSatisfied = false;
       await Promise.all([
-        placeOrder('S', future.bp, lotSize, future.tradingSymbol).then((message) => this.log(message)),
-        placeOrder('S', pe.bp, lotSize, pe.tradingSymbol).then((message) => this.log(message)),
-        placeOrder('B', ce.sp, lotSize, ce.tradingSymbol).then((message) => this.log(message)),
+        shoonyaService.placeOrder('S', future.bp, lotSize, future.tradingSymbol).then((message) => this.log(message)),
+        shoonyaService.placeOrder('S', pe.bp, lotSize, pe.tradingSymbol).then((message) => this.log(message)),
+        shoonyaService.placeOrder('B', ce.sp, lotSize, ce.tradingSymbol).then((message) => this.log(message)),
       ]);
       // TODO: Get this from order response
       const orderState: EnteredState = {
@@ -162,6 +212,17 @@ export class AppState {
       this.enteredTokens.add(pe.token);
       this.enteredTokens.add(ce.token);
       this.enteredStockState[symbol] = orderState;
+    } else {
+      if (state.isFirstPassSatisfied) {
+        const log = [
+          `Second pass entry not satisfied for ${symbol}`,
+          `Future (${future.tradingSymbol}) Buyer Price: ${future.bp}`,
+          `Call (${ce.tradingSymbol}) Seller Price: ${ce.sp}`,
+          `Put (${pe.tradingSymbol}) Buyer Price: ${pe.bp}`,
+        ].join('\n');
+        this.log(log);
+        state.isFirstPassSatisfied = false;
+      }
     }
   }
 
@@ -177,9 +238,15 @@ export class AppState {
       if (result <= this.exitValueDifference) {
         this.log(`EXIT CONDITION 1 satisfied for ${symbol}`);
         await Promise.all([
-          placeOrder('S', future.bp, entry.future.quantity, future.tradingSymbol).then((message) => this.log(message)),
-          placeOrder('S', pe.bp, entry.pe.quantity, pe.tradingSymbol).then((message) => this.log(message)),
-          placeOrder('B', ce.sp, entry.ce.quantity, ce.tradingSymbol).then((message) => this.log(message)),
+          shoonyaService
+            .placeOrder('S', future.bp, entry.future.quantity, future.tradingSymbol)
+            .then((message) => this.log(message)),
+          shoonyaService
+            .placeOrder('S', pe.bp, entry.pe.quantity, pe.tradingSymbol)
+            .then((message) => this.log(message)),
+          shoonyaService
+            .placeOrder('B', ce.sp, entry.ce.quantity, ce.tradingSymbol)
+            .then((message) => this.log(message)),
         ]);
         rmSync(`.data/entries/${symbol}.json`);
         this.enteredTokens.delete(equity.token);
@@ -195,9 +262,15 @@ export class AppState {
       if (result <= this.exitValueDifference) {
         this.log(`EXIT CONDITION 2 satisfied for ${symbol}`);
         await Promise.all([
-          placeOrder('B', future.sp, entry.future.quantity, future.tradingSymbol).then((message) => this.log(message)),
-          placeOrder('B', pe.sp, entry.pe.quantity, pe.tradingSymbol).then((message) => this.log(message)),
-          placeOrder('S', ce.bp, entry.ce.quantity, ce.tradingSymbol).then((message) => this.log(message)),
+          shoonyaService
+            .placeOrder('B', future.sp, entry.future.quantity, future.tradingSymbol)
+            .then((message) => this.log(message)),
+          shoonyaService
+            .placeOrder('B', pe.sp, entry.pe.quantity, pe.tradingSymbol)
+            .then((message) => this.log(message)),
+          shoonyaService
+            .placeOrder('S', ce.bp, entry.ce.quantity, ce.tradingSymbol)
+            .then((message) => this.log(message)),
         ]);
         rmSync(`.data/entries/${symbol}.json`);
         this.enteredTokens.delete(equity.token);
@@ -209,51 +282,11 @@ export class AppState {
     }
   }
 
-  async connectTicker() {
-    console.log('Connecting to ticker...');
-    this.ticker = await new Promise((resolve, reject) => {
-      const socket = new WebSocket('wss://api.shoonya.com/NorenWSTP/');
-
-      const timeout = setTimeout(() => {
-        reject('Ticker connection timed out.');
-      }, 3000);
-
-      socket.onopen = () => {
-        console.log('Ticker initialized and ready to connect...');
-
-        socket.send(
-          JSON.stringify({
-            t: 'c',
-            uid: env.USER_ID,
-            actid: env.USER_ID,
-            susertoken: process.env.token,
-            source: 'API',
-          })
-        );
-      };
-
-      socket.onmessage = (messageEvent: MessageEvent) => {
-        const messageData = JSON.parse(messageEvent.data as string);
-        if (messageData.t === 'ck' && messageData.s === 'OK') {
-          console.log('Ticker connected successfully!');
-          clearTimeout(timeout);
-          resolve(socket);
-        }
-      };
-    });
-  }
-
   async setupState() {
-    try {
-      await this.connectTicker();
-    } catch (error) {
-      await this.connectTicker();
-    }
-
     const bannedStocks = await getBannedStocks();
     this.log(`Banned stocks (${bannedStocks.length}): ${bannedStocks.join(', ')}`);
     // Get equities
-    const equities = (await getEquities()).filter((e) => !bannedStocks.includes(e.symbol));
+    const equities = (await dbService.getEquities()).filter((e) => !bannedStocks.includes(e.symbol));
 
     equities.forEach((equity) => {
       const entry = this.enteredStockState[equity.symbol];
@@ -285,6 +318,9 @@ export class AppState {
           bp: 0,
           sp: 0,
         },
+        isFirstPassSatisfied: false,
+        hedgePrice1: 0,
+        hedgePrice2: 0,
       };
       this.stockState[equity.token] = state;
       this.stockState[equity.symbol] = state;
@@ -302,7 +338,7 @@ export class AppState {
       let responseReceived = 0;
       const tokensToUnsubscribe: string[] = [];
 
-      this.ticker!.onmessage = (messageEvent: MessageEvent) => {
+      tickerService.ticker.onmessage = (messageEvent: MessageEvent) => {
         const messageData = JSON.parse(messageEvent.data as string) as TouchlineResponse;
 
         if (messageData.t === 'tk' && messageData.lp) {
@@ -331,24 +367,24 @@ export class AppState {
           // Resolve once all responses are received
           if (responseReceived === equities.length) {
             this.log(`${tokensToUnsubscribe.length} equities did not satisfy the LTP threshold...`);
-            this.ticker!.send(
+            tickerService.ticker.send(
               JSON.stringify({
                 t: 'u',
                 k: tokensToUnsubscribe.join('#'),
               })
             );
-            this.ticker!.onmessage = null;
-            this.ticker!.onerror = null;
+            tickerService.ticker.onmessage = null;
+            tickerService.ticker.onerror = null;
             resolve();
           }
         }
       };
 
-      this.ticker!.onerror = (error) => {
+      tickerService.ticker.onerror = (error) => {
         reject(error);
       };
 
-      this.ticker!.send(
+      tickerService.ticker.send(
         JSON.stringify({
           t: 't',
           k: equities.map((equity) => `NSE|${equity.token}`).join('#'),
@@ -364,20 +400,20 @@ export class AppState {
     }
 
     // Get futures
-    const allfutures = await getFutures(this.expiry, passedEquitySymbols);
+    const allfutures = await dbService.getFutures(this.expiry, passedEquitySymbols);
 
     // Filter out futures according to margin
     this.log(`Checking margins for ${allfutures.length} futures...`);
-    const getMarginArgs: Array<Parameters<typeof getMargin>> = allfutures.map((f) => [
+    const getMarginArgs: Array<Parameters<typeof shoonyaService.getSellerMargin>> = allfutures.map((f) => [
       f.tradingSymbol,
       0.05,
       f.lotSize,
     ]);
-    const margins = await throttle(getMargin, getMarginArgs);
+    const margins = await throttle(shoonyaService.getSellerMargin.bind(shoonyaService), getMarginArgs);
     const futures = allfutures.filter((future, index) => {
       const marginResponse = margins[index];
       if (marginResponse.status === 'rejected') {
-        console.error('Error fetching margin for', future.symbol, marginResponse.reason);
+        logger.error(`Error fetching margin for ${future.symbol}`, marginResponse.reason);
         return false;
       }
       // if (marginResponse.value.remarks === 'Insufficient Balance') {
@@ -404,7 +440,7 @@ export class AppState {
     // Get options
     for (const symbol of passedEquitySymbols) {
       const state = this.stockState[symbol];
-      const options = await getInstrumentsForSymbol(this.expiry, symbol);
+      const options = await dbService.getInstrumentsForSymbol(this.expiry, symbol);
       const nearestOptions = _.orderBy(options, (o) => Math.abs(state.equity.ltp - o.strikePrice)).slice(0, 2);
       const strike = nearestOptions[0].strikePrice;
 
@@ -416,7 +452,7 @@ export class AppState {
         delete this.stockState[state.symbol];
         delete this.stockState[state.equity.token];
         delete this.stockState[state.future.token];
-        this.ticker!.send(JSON.stringify({ t: 'u', k: `NSE|${state.equity.token}` }));
+        tickerService.ticker.send(JSON.stringify({ t: 'u', k: `NSE|${state.equity.token}` }));
         const foundIndex = nfoTokens.indexOf(`NFO|${state.future.token}`);
         if (foundIndex !== -1) {
           nfoTokens.splice(foundIndex, 1);
@@ -434,8 +470,15 @@ export class AppState {
       }
     }
 
+    this.client.send(
+      JSON.stringify({
+        type: 'stockStateInit',
+        data: _.uniqBy(Object.values(this.stockState), (s) => s.symbol),
+      })
+    );
+
     // Re-add ticker message handler
-    this.ticker!.onmessage = async (messageEvent: MessageEvent) => {
+    tickerService.ticker.onmessage = async (messageEvent: MessageEvent) => {
       const messageData = JSON.parse(messageEvent.data as string) as DepthResponse;
       const state = this.stockState[messageData.tk];
 
@@ -456,37 +499,37 @@ export class AppState {
             delete this.stockState[state.symbol];
             delete this.stockState[state.equity.token];
             delete this.stockState[state.future.token];
-            this.ticker!.send(JSON.stringify({ t: 'u', k: `NSE|${state.equity.token}` }));
+            tickerService.ticker.send(JSON.stringify({ t: 'u', k: `NSE|${state.equity.token}` }));
             return;
           }
           state.equity.ltp = Number(messageData.lp);
           updated = true;
         }
       } else if (messageData.tk === state.future.token) {
-        if (messageData.bp2) {
-          state.future.bp = Number(messageData.bp2);
+        if (messageData.bp3) {
+          state.future.bp = Number(messageData.bp3);
           updated = true;
         }
-        if (messageData.sp2) {
-          state.future.sp = Number(messageData.sp2);
+        if (messageData.sp3) {
+          state.future.sp = Number(messageData.sp3);
           updated = true;
         }
       } else if (messageData.tk === state.pe.token) {
-        if (messageData.bp2) {
-          state.pe.bp = Number(messageData.bp2);
+        if (messageData.bp3) {
+          state.pe.bp = Number(messageData.bp3);
           updated = true;
         }
-        if (messageData.sp2) {
-          state.pe.sp = Number(messageData.sp2);
+        if (messageData.sp3) {
+          state.pe.sp = Number(messageData.sp3);
           updated = true;
         }
       } else if (messageData.tk === state.ce.token) {
-        if (messageData.bp2) {
-          state.ce.bp = Number(messageData.bp2);
+        if (messageData.bp3) {
+          state.ce.bp = Number(messageData.bp3);
           updated = true;
         }
-        if (messageData.sp2) {
-          state.ce.sp = Number(messageData.sp2);
+        if (messageData.sp3) {
+          state.ce.sp = Number(messageData.sp3);
           updated = true;
         }
       }
@@ -499,6 +542,12 @@ export class AppState {
           }
         } else if (this.checkForEntry) {
           await this.checkEntryCondition(state);
+          this.client.send(
+            JSON.stringify({
+              type: 'stockStateUpdate',
+              data: state,
+            })
+          );
         }
       }
     };
@@ -506,7 +555,7 @@ export class AppState {
     writeFileSync('.data/state.json', JSON.stringify(this.stockState, null, 4), 'utf-8');
 
     // Subscribe to all future and option tokens
-    this.ticker!.send(
+    tickerService.ticker.send(
       JSON.stringify({
         t: 'd',
         k: nfoTokens.join('#'),
@@ -515,13 +564,24 @@ export class AppState {
   }
 
   destroyState() {
-    this.ticker!.close();
-    this.ticker = undefined;
+    tickerService.ticker.send(
+      JSON.stringify({
+        t: 'ud',
+        k: Object.values(this.stockState)
+          .flatMap((state) => [
+            `NSE|${state.equity.token}`,
+            `NFO|${state.future.token}`,
+            `NFO|${state.pe.token}`,
+            `NFO|${state.ce.token}`,
+          ])
+          .join('#'),
+      })
+    );
   }
 
   log(message: string) {
     this.logId++;
-    console.log(message);
+    logger.info(message);
     this.client.send(JSON.stringify({ type: 'log', data: { id: this.logId, timeStamp: Date.now(), message } }));
   }
 }

@@ -1,14 +1,15 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { UpdateIcon } from '@radix-ui/react-icons';
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+
 import { Button } from '@client/components/ui/button';
 import { Form } from '@client/components/ui/form';
 import { NumberInputFormField } from '@client/components/ui/number-input-form-field';
 import { SelectFormField } from '@client/components/ui/select-form-field';
 import { useToast } from '@client/components/ui/use-toast';
 import { getExpiryOptions } from '@client/lib/utils';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { UpdateIcon } from '@radix-ui/react-icons';
-import * as React from 'react';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
 
 type ButtonState = 'subscribe' | 'subscribing' | 'subscribed';
 
@@ -86,7 +87,7 @@ export function SubscriptionForm({ setWs }: SubscriptionFormProps) {
         <SelectFormField form={form} name='expiry' options={expiryOptions} />
         <NumberInputFormField form={form} name='lotSize' min={0} step={1} />
         <NumberInputFormField form={form} name='exitValueDifference' min={0} step={100} />
-        <Button type='submit' className='mt-[30px] ml-auto' disabled={buttonState !== 'subscribe'}>
+        <Button type='submit' className='ml-auto mt-[30px]' disabled={buttonState !== 'subscribe'}>
           {buttonState === 'subscribe' ? 'Subscribe' : null}
           {buttonState === 'subscribing' ? (
             <>
