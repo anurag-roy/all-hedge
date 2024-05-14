@@ -13,6 +13,9 @@ const badgeVariants = cva('inline-flex items-center rounded-full border px-2.5 p
         'bg-orange-50/80 text-orange-800 border-orange-100 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800/40',
       blue: 'bg-blue-50/80 text-blue-800 border-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800/40',
       pink: 'bg-pink-50/80 text-pink-800 border-pink-100 dark:bg-pink-900/20 dark:text-pink-300 dark:border-pink-800/40',
+      red: 'bg-red-50/80 text-red-800 border-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800/40',
+      emerald:
+        'bg-emerald-50/80 text-emerald-800 border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800/40',
       outline: 'text-foreground',
     },
   },

@@ -1,15 +1,15 @@
 import { getBannedStocks } from '@server/lib/getBannedStocks.js';
+import dbService from '@server/lib/services/dbService.js';
+import logger from '@server/lib/services/logger.js';
+import shoonyaService from '@server/lib/services/shoonyaService.js';
+import tickerService from '@server/lib/services/tickerService.js';
 import { throttle } from '@server/lib/utils.js';
-import dbService from '@server/services/dbService.js';
-import logger from '@server/services/logger.js';
-import tickerService from '@server/services/tickerService.js';
 import config from '@shared/config/config.js';
 import type { DepthResponse, TouchlineResponse } from '@shared/types/shoonya.js';
 import type { AppStateProps, EnteredState, StockState } from '@shared/types/state.js';
 import * as _ from 'lodash-es';
 import { readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { WebSocket, type MessageEvent } from 'ws';
-import shoonyaService from './services/shoonyaService.js';
 
 export class AppState {
   expiry: string;

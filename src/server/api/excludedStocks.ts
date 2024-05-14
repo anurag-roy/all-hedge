@@ -1,5 +1,5 @@
-import stockService from '@server/services/excludedStocksService.js';
-import logger from '@server/services/logger.js';
+import stockService from '@server/lib/services/excludedStocksService.js';
+import logger from '@server/lib/services/logger.js';
 import { Router, type Request, type Response } from 'express';
 
 const router = Router();

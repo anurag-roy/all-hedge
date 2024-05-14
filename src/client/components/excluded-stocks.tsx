@@ -30,7 +30,7 @@ const reasonToVariantMap = {
 function ExcludedStockRow({ excludedStock }: { excludedStock: ExcludedStock }) {
   return (
     <TableRow>
-      <TableCell>{excludedStock.symbol}</TableCell>
+      <TableCell className='font-medium'>{excludedStock.symbol}</TableCell>
       <TableCell>
         <Badge variant={reasonToVariantMap[excludedStock.reason]}>{excludedStock.reason}</Badge>
       </TableCell>
@@ -40,7 +40,7 @@ function ExcludedStockRow({ excludedStock }: { excludedStock: ExcludedStock }) {
 
 function ExcludedStocksTable({ excludedStocks }: { excludedStocks: ExcludedStock[] }) {
   return (
-    <div className='ml-auto h-56 w-full overflow-y-auto rounded-md border'>
+    <div className='ml-auto h-[234px] w-full overflow-y-auto rounded-md border'>
       <Table>
         <TableHeader>
           <TableRow>

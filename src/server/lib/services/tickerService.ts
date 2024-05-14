@@ -1,7 +1,10 @@
 import env from '@shared/config/env.json';
+import { DepthResponse, TouchlineResponse } from '@shared/types/shoonya.js';
 import { TickerSubscription } from '@shared/types/socket.js';
 import { WebSocket, type MessageEvent } from 'ws';
+import stockStore from '../stores/stockStore.js';
 import { GlobalRef } from './GlobalRef.js';
+import logger from './logger.js';
 
 class TickerService {
   ticker!: WebSocket;
@@ -37,12 +40,19 @@ class TickerService {
     });
   }
 
-  async init() {
+  init() {
     this.ticker.onmessage = (messageEvent: MessageEvent) => {
-      const messageData = JSON.parse(messageEvent.data as string);
-      if (messageData.t === 't' || messageData.t === 'd') {
-        this.subscriptions.forEach((subscription) => subscription(messageData));
+      const messageData = JSON.parse(messageEvent.data as string) as TouchlineResponse | DepthResponse;
+      if (messageData.t === 'tf' && messageData.lp) {
+        stockStore.send({
+          type: 'updateEquityLtp',
+          token: messageData.tk,
+          ltp: Number(messageData.lp),
+        });
       }
+    };
+    this.ticker.onerror = (error) => {
+      logger.error('Ticker error:', error);
     };
   }
 }

@@ -1,5 +1,5 @@
-import logger from '@server/services/logger.js';
-import shoonyaService from '@server/services/shoonyaService.js';
+import logger from '@server/lib/services/logger.js';
+import shoonyaService from '@server/lib/services/shoonyaService.js';
 import { Router, type Request, type Response } from 'express';
 import { HTTPError } from 'ky';
 

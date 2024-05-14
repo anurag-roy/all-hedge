@@ -1,4 +1,5 @@
 import { getBannedStocks } from '@server/lib/getBannedStocks.js';
+import stockStore from '@server/lib/stores/stockStore.js';
 import config from '@shared/config/config.js';
 import { TouchlineResponse } from '@shared/types/shoonya.js';
 import { ExcludedStock, ExclusionReason } from '@shared/types/stock.js';
@@ -41,16 +42,25 @@ class ExcludedStocksService {
         if (messageData.t === 'tk' && messageData.lp) {
           responseReceived++;
           const ltp = Number(messageData.lp);
+          const close = Number(messageData.c);
 
           // Checkif LTP is below threshold
           if (ltp < config.LTP_THRESHOLD) {
             ltpBelowThresholdTokens.push(messageData.tk);
+          } else {
+            const equity = filteredEquities.find((equity) => equity.token === messageData.tk)!;
+            stockStore.send({
+              type: 'addEquity',
+              symbol: equity.symbol,
+              token: equity.token,
+              ltp,
+              close,
+            });
           }
 
           // Resolve once all responses are received
           if (responseReceived === filteredEquities.length) {
-            tickerService.ticker.onmessage = null;
-            tickerService.ticker.onerror = null;
+            tickerService.init();
             resolve();
           }
         }

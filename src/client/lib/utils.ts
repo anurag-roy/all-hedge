@@ -44,3 +44,8 @@ export const displayInr = (amount: string | number) => {
 export const getRandomIndex = (min: number, max: number) => Math.floor(Math.random() * (max - min)) + min;
 
 export const getTodayAsParam = () => new Date().toISOString().slice(0, 10).split('-').reverse().join('');
+
+export const getBaseWsUrl = () => {
+  const { protocol, hostname, port } = window.location;
+  return `${protocol === 'https:' ? 'wss:' : 'ws:'}//${hostname}:${port}/api/wss`;
+};

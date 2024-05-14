@@ -4,6 +4,7 @@ import { ExcludedStocks } from '@client/components/excluded-stocks';
 import { Header } from '@client/components/header';
 import { Limits } from '@client/components/limits';
 import { Logs } from '@client/components/logs';
+import { Movers } from '@client/components/movers';
 import { StockStates } from '@client/components/stock-states';
 import { SubscriptionForm } from '@client/components/subscription-form';
 import type { StockState } from '@shared/types/state';
@@ -40,7 +41,7 @@ export default function Root() {
       <main className='container'>
         <div className='grid grid-cols-[30%,_50%,_20%] gap-4'>
           <ExcludedStocks />
-          <div></div>
+          <Movers />
           <Limits />
         </div>
         <section>

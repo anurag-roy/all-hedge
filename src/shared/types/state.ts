@@ -7,6 +7,17 @@ export type OptionState = {
   sp: number;
 };
 
+export type EquityState = {
+  token: string;
+  symbol: string;
+  ltp: number;
+  close: number;
+};
+
+export type Mover = EquityState & {
+  change: number;
+};
+
 export type StockState = {
   symbol: string;
   equity: {
