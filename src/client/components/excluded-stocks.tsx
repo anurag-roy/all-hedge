@@ -94,7 +94,7 @@ export function ExcludedStocks() {
   };
 
   return (
-    <section className='p-4'>
+    <section>
       <div className='mb-2 flex items-center justify-between'>
         <h2 className='ml-1 text-xl font-semibold'>Excluded stocks</h2>
         <Popover>

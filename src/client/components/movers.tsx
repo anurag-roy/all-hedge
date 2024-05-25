@@ -60,7 +60,7 @@ export function Movers() {
   }, []);
 
   return (
-    <section className='p-4'>
+    <section>
       <div className='mb-2 flex items-center justify-between'>
         <h2 className='ml-1 text-xl font-semibold'>Top movers</h2>
       </div>
@@ -90,7 +90,9 @@ export function Movers() {
                       '-'
                     )}
                   </TableCell>
-                  <TableCell className='text-right'>{gainer?.ltp.toFixed(2) || '-'}</TableCell>
+                  <TableCell className='text-right font-medium text-emerald-800 dark:text-emerald-400'>
+                    {gainer?.ltp.toFixed(2) || '-'}
+                  </TableCell>
                   <TableCell>
                     {loser ? (
                       <div className='flex items-center justify-between font-medium'>
@@ -100,7 +102,9 @@ export function Movers() {
                       '-'
                     )}
                   </TableCell>
-                  <TableCell className='text-right'>{loser?.ltp.toFixed(2) || '-'}</TableCell>
+                  <TableCell className='text-right font-medium text-red-800 dark:text-red-400'>
+                    {loser?.ltp.toFixed(2) || '-'}
+                  </TableCell>
                 </TableRow>
               );
             })}

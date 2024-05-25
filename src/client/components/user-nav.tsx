@@ -1,13 +1,10 @@
-import { ArrowTopRightIcon } from '@radix-ui/react-icons';
 import * as React from 'react';
-import { Link } from 'react-router-dom';
 
 import { Avatar, AvatarFallback } from '@client/components/ui/avatar';
 import { Button } from '@client/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -43,17 +40,6 @@ export function UserNav() {
             <p className='text-xs leading-none text-muted-foreground'>{userDetails.uid}</p>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem disabled>Holdings</DropdownMenuItem>
-          <DropdownMenuItem disabled>Positions</DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to='/amo' target='_blank'>
-              Place AMO
-              <ArrowTopRightIcon className='mb-[1px] ml-2 h-4 w-4' />
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem>Log out</DropdownMenuItem>
       </DropdownMenuContent>

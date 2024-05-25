@@ -31,7 +31,7 @@ export function Limits() {
   }, []);
 
   return (
-    <section className='p-4'>
+    <section>
       <div className='mb-2 flex items-center justify-between'>
         <h2 className='ml-1 text-xl font-semibold'>Margin</h2>
         <Button variant='outline' size='icon-sm' onClick={() => refreshLimits()}>
@@ -40,12 +40,12 @@ export function Limits() {
       </div>
       <div className='flex flex-col gap-4 rounded-md border p-4'>
         <div>
-          <p className='text-xs font-medium text-muted-foreground'>Cash Margin</p>
-          <p>{limits?.cash ? displayInr(limits.cash) : '-'}</p>
+          <p className='mb-1 text-xs font-medium text-muted-foreground'>Cash Margin</p>
+          <p className='font-medium'>{limits?.cash ? displayInr(limits.cash) : '-'}</p>
         </div>
         <div>
-          <p className='text-xs font-medium text-muted-foreground'>Collateral </p>
-          <p>{limits?.collateral ? displayInr(limits.collateral) : '-'}</p>
+          <p className='mb-1 text-xs font-medium text-muted-foreground'>Collateral </p>
+          <p className='font-medium'>{limits?.collateral ? displayInr(limits.collateral) : '-'}</p>
         </div>
       </div>
     </section>
