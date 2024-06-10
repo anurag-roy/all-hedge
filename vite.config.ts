@@ -12,4 +12,9 @@ export default defineConfig({
       '@shared': path.resolve(__dirname, './src/shared'),
     },
   },
+  server: {
+    hmr: {
+      port: 3002,
+    },
+  },
 });
