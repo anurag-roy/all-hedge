@@ -1,4 +1,3 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@client/components/ui/table';
 import {
   AccessorFnColumnDef,
   ColumnFiltersState,
@@ -11,8 +10,10 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import * as React from 'react';
-import { DataTablePagination } from './pagination';
-import { DataTableToolbar } from './toolbar';
+
+import { DataTablePagination } from '@client/components/stock-states/pagination';
+import { DataTableToolbar } from '@client/components/stock-states/toolbar';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@client/components/ui/table';
 
 interface DataTableProps<TData, TValue> {
   columns: AccessorFnColumnDef<TData, TValue>[];

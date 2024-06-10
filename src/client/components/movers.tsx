@@ -1,10 +1,10 @@
 import * as React from 'react';
 
+import { Badge } from '@client/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@client/components/ui/table';
 import { getBaseWsUrl } from '@client/lib/utils';
 import { SocketData, SocketDataType } from '@shared/types/socket';
 import { Mover } from '@shared/types/state';
-import { Badge } from './ui/badge';
 
 const MOVERS_COUNT = 5;
 const indices = Array.from({ length: MOVERS_COUNT }, (_, i) => i);

@@ -1,7 +1,8 @@
-import { Button } from '@client/components/ui/button';
-import { Input } from '@client/components/ui/input';
 import { Cross2Icon } from '@radix-ui/react-icons';
 import { Table } from '@tanstack/react-table';
+
+import { Button } from '@client/components/ui/button';
+import { Input } from '@client/components/ui/input';
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;

@@ -1,6 +1,6 @@
+import { columns } from '@client/components/stock-states/columns';
+import { DataTable } from '@client/components/stock-states/data-table';
 import type { StockState } from '@shared/types/state';
-import { columns } from './columns';
-import { DataTable } from './data-table';
 
 type StockStatesProps = {
   stockStates: StockState[];

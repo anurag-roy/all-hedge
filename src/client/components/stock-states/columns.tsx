@@ -1,6 +1,7 @@
-import { StockState } from '@shared/types/state';
 import { AccessorFnColumnDef, createColumnHelper } from '@tanstack/react-table';
-import { DataTableColumnHeader } from './column-header';
+
+import { DataTableColumnHeader } from '@client/components/stock-states/column-header';
+import { StockState } from '@shared/types/state';
 
 const columnHelper = createColumnHelper<StockState>();
 

@@ -1,4 +1,5 @@
 import { ReloadIcon } from '@radix-ui/react-icons';
+import { HTTPError } from 'ky';
 import * as React from 'react';
 import { toast } from 'sonner';
 
@@ -6,7 +7,6 @@ import { Button } from '@client/components/ui/button';
 import { api } from '@client/lib/api';
 import { displayInr } from '@client/lib/utils';
 import type { Limits } from '@shared/types/shoonya';
-import { HTTPError } from 'ky';
 
 export function Limits() {
   const [limits, setLimits] = React.useState<Limits>();
